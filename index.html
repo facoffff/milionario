@@ -158,7 +158,7 @@
     </div>
   </div>
 
-  <!-- CHARTERER & OWS -->
+  <!-- CHARTERER & OWS-->
   <p class="section-title">🚢 Charterer &amp; Armatori</p>
   <div class="grid-2">
     <div class="card">
@@ -171,318 +171,579 @@
     </div>
   </div>
 
-<html lang="it">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Chi Vuole Essere Milionario — Dashboard</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<style>
-  :root {
-    --dark:#1F3864; --mid:#2E75B6; --light:#D6E4F0;
-    --green:#70AD47; --orange:#ED7D31; --gold:#FFC000;
-    --bg:#0f1923; --card:#162032; --border:#243554;
-    --text:#e2e8f0; --muted:#8fa3bf;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:'Segoe UI',Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
-
-  /* LOADING */
-  #loader{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;gap:18px;}
-  .spinner{width:52px;height:52px;border:4px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  #loader p{color:var(--muted);font-size:0.95rem;}
-  #loader.hidden{display:none;}
-
-  /* ERROR */
-  #error-box{display:none;background:#2a0a0a;border:1px solid #c00;border-radius:12px;padding:24px;margin:30px auto;max-width:700px;color:#f87171;}
-  #error-box h3{color:#ff6b6b;margin-bottom:8px;}
-  #error-box code{background:#1a0505;padding:2px 6px;border-radius:4px;font-size:0.85rem;}
-  #error-box.visible{display:block;}
-
-  /* HEADER */
-  header{background:linear-gradient(135deg,#1F3864 0%,#2E75B6 100%);padding:22px 40px 18px;border-bottom:3px solid var(--gold);}
-  header h1{font-size:1.9rem;font-weight:800;letter-spacing:1px;color:#fff;}
-  header h1 span{color:var(--gold);}
-  .header-meta{display:flex;align-items:center;gap:20px;margin-top:6px;}
-  header p{color:#b8d0ea;font-size:0.9rem;}
-  #last-updated{color:var(--gold);font-size:0.8rem;font-weight:600;opacity:0.8;}
-  .refresh-btn{background:rgba(255,192,0,0.15);border:1px solid var(--gold);color:var(--gold);padding:4px 12px;border-radius:20px;font-size:0.78rem;cursor:pointer;transition:all 0.2s;}
-  .refresh-btn:hover{background:rgba(255,192,0,0.3);}
-
-  /* LAYOUT */
-  .container{max-width:1400px;margin:0 auto;padding:28px 24px;}
-  #main{display:none;}
-  #main.visible{display:block;}
-
-  /* KPI */
-  .kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px;}
-  .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;text-align:center;position:relative;overflow:hidden;}
-  .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
-  .kpi.blue::before{background:var(--mid);}
-  .kpi.green::before{background:var(--green);}
-  .kpi.orange::before{background:var(--orange);}
-  .kpi.gold::before{background:var(--gold);}
-  .kpi.purple::before{background:#9B59B6;}
-  .kpi-label{font-size:0.7rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);margin-bottom:8px;}
-  .kpi-value{font-size:1.6rem;font-weight:800;color:#fff;line-height:1;}
-  .kpi-sub{font-size:0.76rem;color:var(--muted);margin-top:5px;}
-
-  /* SECTION */
-  .section-title{font-size:0.73rem;text-transform:uppercase;letter-spacing:2px;color:var(--gold);margin-bottom:14px;padding-bottom:6px;border-bottom:1px solid var(--border);}
-
-  /* GRID */
-  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
-  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:20px;}
-  .grid-1{display:grid;grid-template-columns:1fr;gap:20px;margin-bottom:20px;}
-
-  /* CARD */
-  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:22px 24px;}
-  .card h3{font-size:0.86rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:16px;}
-  .card h3 strong{color:#fff;font-size:0.98rem;display:block;margin-top:2px;text-transform:none;letter-spacing:0;}
-  .chart-wrap{position:relative;}
-  .chart-wrap.tall{height:300px;}
-
-  /* TABLE */
-  .data-table{width:100%;border-collapse:collapse;font-size:0.84rem;}
-  .data-table th{background:#1a2e4a;color:var(--muted);font-weight:600;text-transform:uppercase;font-size:0.7rem;letter-spacing:0.8px;padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);}
-  .data-table th.num{text-align:right;}
-  .data-table td{padding:9px 14px;border-bottom:1px solid #1a2e4a;color:var(--text);}
-  .data-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
-  .data-table tr:hover td{background:rgba(46,117,182,0.08);}
-  .data-table tr:last-child td{border-bottom:none;}
-  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;}
-  .badge-blue{background:rgba(46,117,182,0.2);color:#7bb8e8;}
-  .badge-green{background:rgba(112,173,71,0.2);color:#9dd665;}
-  .badge-orange{background:rgba(237,125,49,0.2);color:#f0a76b;}
-  .badge-gold{background:rgba(255,192,0,0.2);color:#ffd84d;}
-  .badge-purple{background:rgba(155,89,182,0.2);color:#c39be0;}
-  .bar-inline{height:6px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:4px;}
-  .bar-inline-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--mid),var(--gold));}
-
-  footer{text-align:center;padding:24px;color:var(--muted);font-size:0.78rem;border-top:1px solid var(--border);margin-top:10px;}
-</style>
-</head>
-<body>
-
-<!-- LOADER -->
-<div id="loader">
-  <div class="spinner"></div>
-  <p>Caricamento dati da Google Sheets...</p>
-</div>
-
-<!-- ERROR -->
-<div id="error-box">
-  <h3>⚠️ Impossibile caricare i dati</h3>
-
-  <div style="background:#3a1a00;border:1px solid #f90;border-radius:8px;padding:14px;margin-bottom:14px;">
-    <p style="color:#ffb347;font-weight:700;margin-bottom:6px;">📌 IMPORTANTE — Come aprire questo file</p>
-    <p style="font-size:0.88rem;color:#ffd580;">Questo dashboard <strong>non funziona</strong> nell'anteprima integrata (icona occhio 👁).<br>
-    Devi aprirlo direttamente in <strong>Google Chrome</strong>:</p>
-    <ol style="margin-top:8px;line-height:2.2;padding-left:20px;font-size:0.88rem;color:#ffd580;">
-      <li>Trova il file <code style="background:#2a1000;padding:1px 5px;border-radius:3px;">dashboard_milionario.html</code> nella cartella outputs</li>
-      <li>Fai <strong>doppio clic</strong> sul file (si aprirà in Chrome)</li>
-      <li>Oppure trascinalo nella barra degli indirizzi di Chrome</li>
-    </ol>
-  </div>
-
-  <p style="margin-bottom:10px;font-size:0.9rem;">Se apri già il file in Chrome e vedi questo errore, controlla anche la condivisione del Google Sheet:</p>
-  <ol style="line-height:2;padding-left:20px;font-size:0.85rem;">
-    <li>Apri il tuo <strong>Google Sheet</strong></li>
-    <li>Clicca <strong>Condividi</strong> → in "Accesso generale" seleziona <strong>"Chiunque abbia il link → Visualizzatore"</strong></li>
-    <li>Clicca <strong>Fine</strong>, poi ricarica (F5)</li>
-  </ol>
-  <button onclick="location.reload()" style="margin-top:14px;background:#c00;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.88rem;">↻ Riprova</button>
-  <p style="margin-top:12px;font-size:0.78rem;color:#888;">Errore tecnico: <code id="error-detail"></code></p>
-</div>
-
-<header>
-  <h1>Chi Vuole Essere <span>Milionario?</span> 💰</h1>
-  <div class="header-meta">
-    <p>Genoa Fixtures Analytics · Dati live da Google Sheets</p>
-    <span id="last-updated"></span>
-    <button class="refresh-btn" onclick="location.reload()">↻ Aggiorna</button>
-  </div>
-</header>
-
-<div class="container">
-<div id="main">
-
-  <!-- KPI -->
-  <div class="kpi-strip">
-    <div class="kpi blue"><div class="kpi-label">Fixture Totali</div><div class="kpi-value" id="kpi-fix">—</div><div class="kpi-sub" id="kpi-months">—</div></div>
-    <div class="kpi green"><div class="kpi-label">Commissione Totale</div><div class="kpi-value" id="kpi-comm">—</div><div class="kpi-sub">MIN. COMM lorda</div></div>
-    <div class="kpi orange"><div class="kpi-label">Fatturato</div><div class="kpi-value" id="kpi-fat">—</div><div class="kpi-sub">Importo fatturato</div></div>
-    <div class="kpi gold"><div class="kpi-label">Comm. Media / Fixture</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-sub">Per singola fixture</div></div>
-    <div class="kpi purple"><div class="kpi-label">Charterer Unici</div><div class="kpi-value" id="kpi-chrtr">—</div><div class="kpi-sub">Partner commerciali attivi</div></div>
-  </div>
-
-  <p class="section-title">📈 Andamento Mensile</p>
-  <div class="grid-2">
-    <div class="card"><h3>Fixture Mensili<strong>Numero di fixture chiuse per mese</strong></h3><div class="chart-wrap tall"><canvas id="chartMonthlyCount"></canvas></div></div>
-    <div class="card"><h3>Commissione vs Fatturato<strong>Commissione minima vs importo fatturato ($)</strong></h3><div class="chart-wrap tall"><canvas id="chartMonthlyComm"></canvas></div></div>
-  </div>
-  <p class="section-title">🚢 Charterer &amp; Armatori</p>
-  <div class="grid-2">
-    <div class="card"><h3>Top Charterer<strong>I 10 charterer con più commissioni generate ($)</strong></h3><div class="chart-wrap tall"><canvas id="chartTopChrtr"></canvas></div></div>
-    <div class="card"><h3>Top Armatori (OWS)<strong>I 10 owner per importo fatturato ($)</strong></h3><div class="chart-wrap tall"><canvas id="chartTopOWS"></canvas></div></div>
-  </div>
+  <!-- BROKER -->
   <p class="section-title">👥 Analisi Broker</p>
   <div class="grid-3">
-    <div class="card"><h3>Broker Singoli<strong>Fixture per broker (anche in coppia)</strong></h3><div class="chart-wrap tall"><canvas id="chartBrkrIndiv"></canvas></div></div>
-    <div class="card"><h3>🔥 Coppie Broker più Quotate<strong>Combinazioni di broker nelle stesse fixture</strong></h3><div class="chart-wrap tall"><canvas id="chartBrkrPairs"></canvas></div></div>
-    <div class="card"><h3>Distribuzione Uffici<strong>Fixture per ufficio di fatturazione</strong></h3><div class="chart-wrap tall"><canvas id="chartOffice"></canvas></div></div>
+    <div class="card">
+      <h3>Broker Singoli<strong>Fixture per broker (anche in coppia)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrIndiv"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>🔥 Coppie Broker più Quotate<strong>Combinazioni di broker nelle stesse fixture</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrPairs"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Distribuzione Uffici<strong>Fixture per ufficio di fatturazione</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartOffice"></canvas></div>
+    </div>
   </div>
-  <p class="section-title">🏆 Performance Broker</p>
+
+  <!-- PERFORMANCE BROKER -->
+  <p class="section-title">🏆 Performance Broker (da GENOA FIXTURES)</p>
   <div class="grid-2">
-    <div class="card"><h3>Fixture per Broker<strong>YTD Gen–Mar 2026 vs Gen–Mar 2025</strong></h3><div class="chart-wrap tall"><canvas id="chartBrkrFixYTD"></canvas></div></div>
-    <div class="card"><h3>Fatturato per Broker<strong>YTD Gen–Mar 2026 vs Gen–Mar 2025 ($)</strong></h3><div class="chart-wrap tall"><canvas id="chartBrkrFatYTD"></canvas></div></div>
+    <div class="card">
+      <h3>Fixture per Broker<strong>YTD Gen–Mar 2026 vs Gen–Mar 2025</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrFixYTD"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Fatturato per Broker<strong>YTD Gen–Mar 2026 vs Gen–Mar 2025 ($)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrFatYTD"></canvas></div>
+    </div>
   </div>
   <div class="grid-2">
-    <div class="card"><h3>Fixture per Broker per Anno<strong>2024 (parz.) · 2025 (completo) · 2026 (YTD)</strong></h3><div class="chart-wrap tall"><canvas id="chartBrkrFixYear"></canvas></div></div>
-    <div class="card"><h3>Andamento Mensile Fatturato 2025<strong>Per broker office ($)</strong></h3><div class="chart-wrap tall"><canvas id="chartBrkrFatMonthly"></canvas></div></div>
+    <div class="card">
+      <h3>Fixture per Broker per Anno<strong>2024 (parz.) · 2025 (completo) · 2026 (YTD)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrFixYear"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Andamento Mensile Fatturato 2025<strong>Per broker office ($)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrFatMonthly"></canvas></div>
+    </div>
   </div>
+
+  <!-- TABELLE -->
   <p class="section-title">📊 Riepilogo Dati</p>
-  <div class="grid-1"><div class="card"><h3>Top 10 Charterer per Commissione</h3><table class="data-table"><thead><tr><th>#</th><th>Charterer</th><th class="num">Min. Comm ($)</th><th class="num">Fixture</th></tr></thead><tbody id="tblChrtr"></tbody></table></div></div>
-  <div class="grid-1"><div class="card"><h3>Dettaglio Mensile Completo</h3><table class="data-table"><thead><tr><th>Mese</th><th class="num">Fixture</th><th class="num">Min. Comm ($)</th><th class="num">Fatturato ($)</th><th class="num">Comm. Media ($)</th><th>Trend</th></tr></thead><tbody id="tblMonthly"></tbody></table></div></div>
-</div></div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Top 10 Charterer per Commissione</h3>
+      <table class="data-table">
+        <thead><tr><th>#</th><th>Charterer</th><th class="num">Min. Comm ($)</th><th class="num">Fixture</th></tr></thead>
+        <tbody id="tblChrtr"></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Dettaglio Mensile Completo</h3>
+      <table class="data-table">
+        <thead><tr><th>Mese</th><th class="num">Fixture</th><th class="num">Min. Comm ($)</th><th class="num">Fatturato ($)</th><th class="num">Comm. Media ($)</th><th>Trend</th></tr></thead>
+        <tbody id="tblMonthly"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /container -->
 
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
 const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
-Chart.defaults.color='#8fa3bf';Chart.defaults.font.family="'Segoe UI',Arial,sans-serif";Chart.defaults.font.size=11;
-const GC='rgba(36,53,84,0.8)';
-const PAL=['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
-const BRKR_CORE=['MPE','LCE','FGA','OPE','SDP','BEE'];
-const fmtM=v=>v>=1e6?'$'+Math.round(v/1e6*10)/10+'M':v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+Math.round(v);
-const fmtN=v=>'$'+Math.round(v).toLocaleString('it-IT');
-const fmtPct=v=>(v*100).toFixed(1)+'%';
-function parseDate(s){if(!s||s.trim()==='')return null;s=s.trim();const it=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);if(it)return new Date(+it[3],+it[2]-1,+it[1]);const d=new Date(s.replace(' ','T'));return isNaN(d)?null:d;}
-function parseNum(s){if(!s||s.trim()==='')return null;const n=parseFloat(s.replace(/,/g,''));return isNaN(n)?null:n;}
-function monthKey(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;}
-function monthLabel(key){const[y,m]=key.split('-');const names=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];return names[parseInt(m)-1]+'-'+y.slice(2);}
-function getBrokers(s){if(!s||s.trim()==='')return[];return s.split('+').map(b=>b.trim()).filter(Boolean);}
-function normPair(a,b){return[a,b].sort().join(' + ');}
-function fetchSheetJsonp(sheetId,sheetName,opts){
-  opts=opts||{};
-  return new Promise((resolve,reject)=>{
-    const cb='_gviz_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
-    let url=`https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${cb}&sheet=${encodeURIComponent(sheetName)}`;
-    if(opts.range)url+=`&range=${opts.range}`;
-    const timer=setTimeout(()=>{delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);reject(new Error('Timeout'));},15000);
-    window[cb]=function(resp){
-      clearTimeout(timer);delete window[cb];if(script.parentNode)script.parentNode.removeChild(script);
-      if(!resp||resp.status!=='ok'){reject(new Error('Errore Google Sheets'));return;}
-      const cols=resp.table.cols,rows=resp.table.rows;
-      const headers=cols.map(c=>(c.label||c.id||'').trim());
-      const data=[headers];
-      for(const row of rows){
-        const cells=row.c||[];
-        const arr=headers.map((_,i)=>{
-          const cell=cells[i],col=cols[i];
-          if(!cell||cell.v===null||cell.v===undefined)return'';
-          if(col.type==='date'||col.type==='datetime'){const v=cell.v;if(typeof v==='string'&&v.startsWith('Date(')){const m=v.match(/Date\((\d+),(\d+),(\d+)\)/);if(m)return`${String(+m[3]).padStart(2,'0')}/${String(+m[2]+1).padStart(2,'0')}/${m[1]}`;} if(cell.f)return String(cell.f);return String(v);}
-          if(col.type==='number'&&typeof cell.v==='number')return String(cell.v);
-          if(cell.f!==null&&cell.f!==undefined)return String(cell.f);
+
+// ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────
+Chart.defaults.color = '#8fa3bf';
+Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
+Chart.defaults.font.size = 11;
+const GC = 'rgba(36,53,84,0.8)';
+const PAL = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
+const BRKR_CORE = ['MPE','LCE','FGA','OPE','SDP','BEE'];
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmtM = v => v >= 1e6 ? '$'+Math.round(v/1e6*10)/10+'M' : v >= 1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+Math.round(v);
+const fmtN = v => '$' + Math.round(v).toLocaleString('it-IT');
+const fmtPct = v => (v*100).toFixed(1)+'%';
+
+function parseDate(s) {
+  if (!s || s.trim() === '') return null;
+  s = s.trim();
+  // Italian format: dd/mm/yyyy or d/m/yyyy
+  const it = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if (it) return new Date(+it[3], +it[2]-1, +it[1]);
+  // ISO format: yyyy-mm-dd or yyyy-mm-dd hh:mm:ss
+  const d = new Date(s.replace(' ', 'T'));
+  return isNaN(d) ? null : d;
+}
+
+function parseNum(s) {
+  if (!s || s.trim() === '') return null;
+  const n = parseFloat(s.replace(/,/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function monthKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+function monthLabel(key) {
+  const [y, m] = key.split('-');
+  const names = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  return names[parseInt(m)-1] + '-' + y.slice(2);
+}
+
+function getBrokers(s) {
+  if (!s || s.trim() === '') return [];
+  return s.split('+').map(b => b.trim()).filter(Boolean);
+}
+
+function normPair(a, b) { return [a,b].sort().join(' + '); }
+
+// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ───────────────────
+function fetchSheetJsonp(sheetId, sheetName, opts) {
+  opts = opts || {};
+  return new Promise((resolve, reject) => {
+    const cb = '_gviz_' + Date.now() + '_' + Math.floor(Math.random()*1e6);
+    // gviz/tq usa "responseHandler" dentro tqx (non il parametro &callback separato)
+    let url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=responseHandler:${cb}&sheet=${encodeURIComponent(sheetName)}`;
+    if (opts.range) url += `&range=${opts.range}`;
+
+    const timer = setTimeout(() => {
+      delete window[cb];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      reject(new Error('Timeout: Google Sheets non risponde dopo 15s'));
+    }, 15000);
+
+    window[cb] = function(resp) {
+      clearTimeout(timer);
+      delete window[cb];
+      if (script.parentNode) script.parentNode.removeChild(script);
+      if (!resp || resp.status !== 'ok') {
+        reject(new Error('Errore Google Sheets: ' + JSON.stringify(resp && resp.errors)));
+        return;
+      }
+      const cols = resp.table.cols;
+      const rows = resp.table.rows;
+      const headers = cols.map(c => (c.label || c.id || '').trim());
+      const data = [headers];
+      for (const row of rows) {
+        const cells = row.c || [];
+        const arr = headers.map((_, i) => {
+          const cell = cells[i];
+          const col = cols[i];
+          if (!cell || cell.v === null || cell.v === undefined) return '';
+          // Date columns: build dd/mm/yyyy from Date(y,m,d) or formatted string
+          if (col.type === 'date' || col.type === 'datetime') {
+            const v = cell.v;
+            if (typeof v === 'string' && v.startsWith('Date(')) {
+              const m = v.match(/Date\((\d+),(\d+),(\d+)\)/);
+              if (m) return `${String(+m[3]).padStart(2,'0')}/${String(+m[2]+1).padStart(2,'0')}/${m[1]}`;
+            }
+            if (cell.f) return String(cell.f);
+            return String(v);
+          }
+          // Number columns: use raw value to avoid Italian thousand-separator issues
+          if (col.type === 'number' && typeof cell.v === 'number') return String(cell.v);
+          // Strings
+          if (cell.f !== null && cell.f !== undefined) return String(cell.f);
           return String(cell.v);
         });
         data.push(arr);
       }
       resolve(data);
     };
-    const script=document.createElement('script');
-    script.onerror=()=>{clearTimeout(timer);delete window[cb];reject(new Error('Impossibile raggiungere Google Sheets. Verifica che il foglio sia condiviso pubblicamente.'));};
-    script.src=url;document.head.appendChild(script);
+
+    const script = document.createElement('script');
+    script.onerror = () => {
+      clearTimeout(timer);
+      delete window[cb];
+      reject(new Error('Impossibile raggiungere Google Sheets. Verifica che il foglio sia condiviso pubblicamente (Condividi → Chiunque abbia il link → Visualizzatore).'));
+    };
+    script.src = url;
+    document.head.appendChild(script);
   });
 }
-function parseGF(rows){const headers=rows[0].map(h=>h?h.trim():'');const idx={};headers.forEach((h,i)=>idx[h]=i);return rows.slice(1).filter(row=>row.some(c=>c&&c.trim()!=='')).filter(row=>{const mc=row[idx['MIN. COMM']];return mc&&mc.trim()!==''&&parseNum(mc)!==null;}).map(row=>({date:parseDate(row[idx['CP DATE']]),ows:(row[idx['OWS']]||'').trim(),chrtr:(row[idx['CHRTR']]||'').trim(),vsl:(row[idx['VSL']]||'').trim(),minComm:parseNum(row[idx['MIN. COMM']])||0,brkr:(row[idx['GENOA BRKR']]||'').trim(),office:(row[idx['OFFICE INVOICING']]||'').trim()})).filter(r=>r.date!==null&&r.minComm>0);}
-function parseFAT(rows){const headers=rows[0].map(h=>h?h.trim():'');const idx={};headers.forEach((h,i)=>idx[h]=i);const fatIdx=headers.findIndex(h=>h.toUpperCase().includes('FATTURATO')&&!h.toUpperCase().includes('TOT'));return rows.slice(1).filter(row=>row.some(c=>c&&c.trim()!=='')).map(row=>({date:parseDate(row[idx['CP DATE']]),ows:(row[idx['OWS']]||'').trim(),brkr:(row[idx['GENOA BRKR']]||'').trim(),fatturato:fatIdx>=0?(parseNum(row[fatIdx])||0):0})).filter(r=>r.date!==null);}
-function compute(gfData,fatData){
-  const monthSet=new Set();gfData.forEach(r=>monthSet.add(monthKey(r.date)));const months=Array.from(monthSet).sort();
-  const monthCount={},monthComm={},monthInv={};
-  months.forEach(m=>{monthCount[m]=0;monthComm[m]=0;monthInv[m]=0;});
-  gfData.forEach(r=>{const m=monthKey(r.date);if(monthCount[m]!==undefined){monthCount[m]++;monthComm[m]+=r.minComm;}});
-  fatData.forEach(r=>{const m=monthKey(r.date);if(monthInv[m]!==undefined)monthInv[m]+=r.fatturato;});
-  const chrtrComm={},chrtrFix={};gfData.forEach(r=>{chrtrComm[r.chrtr]=(chrtrComm[r.chrtr]||0)+r.minComm;chrtrFix[r.chrtr]=(chrtrFix[r.chrtr]||0)+1;});
-  const topChrtr=Object.entries(chrtrComm).sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const owsFat={};fatData.forEach(r=>{owsFat[r.ows]=(owsFat[r.ows]||0)+r.fatturato;});
-  const topOws=Object.entries(owsFat).filter(e=>e[0]!=='').sort((a,b)=>b[1]-a[1]).slice(0,10);
-  const brkrCount={};gfData.forEach(r=>getBrokers(r.brkr).forEach(b=>{brkrCount[b]=(brkrCount[b]||0)+1;}));
-  const pairCount={};gfData.forEach(r=>{const bs=getBrokers(r.brkr);if(bs.length>=2){for(let i=0;i<bs.length;i++)for(let j=i+1;j<bs.length;j++){const p=normPair(bs[i],bs[j]);pairCount[p]=(pairCount[p]||0)+1;}}});
-  const topPairs=Object.entries(pairCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
-  const offCount={};gfData.forEach(r=>{if(r.office)offCount[r.office]=(offCount[r.office]||0)+1;});
-  const topOffices=Object.entries(offCount).sort((a,b)=>b[1]-a[1]);
-  const curYear=new Date().getFullYear(),prevYear=curYear-1;
-  const brkrFixYTD_cur={},brkrFixYTD_prev={},brkrFatYTD_cur={},brkrFatYTD_prev={};
-  BRKR_CORE.forEach(b=>{brkrFixYTD_cur[b]=0;brkrFixYTD_prev[b]=0;brkrFatYTD_cur[b]=0;brkrFatYTD_prev[b]=0;});
-  const curMonth=new Date().getMonth();
-  gfData.forEach(r=>{const y=r.date.getFullYear(),mo=r.date.getMonth();if(mo>curMonth)return;getBrokers(r.brkr).forEach(b=>{if(!BRKR_CORE.includes(b))return;if(y===curYear)brkrFixYTD_cur[b]++;if(y===prevYear)brkrFixYTD_prev[b]++;});});
-  fatData.forEach(r=>{const y=r.date.getFullYear(),mo=r.date.getMonth();if(mo>curMonth)return;const bs=getBrokers(r.brkr);const share=bs.length>0?r.fatturato/bs.length:0;bs.forEach(b=>{if(!BRKR_CORE.includes(b))return;if(y===curYear)brkrFatYTD_cur[b]+=share;if(y===prevYear)brkrFatYTD_prev[b]+=share;});});
-  const allYears=[...new Set(gfData.map(r=>r.date.getFullYear()))].sort();
-  const brkrByYear={};allYears.forEach(y=>{brkrByYear[y]={};BRKR_CORE.forEach(b=>brkrByYear[y][b]=0);});
-  gfData.forEach(r=>{const y=r.date.getFullYear();getBrokers(r.brkr).forEach(b=>{if(BRKR_CORE.includes(b))brkrByYear[y][b]++;});});
-  const fatYear=prevYear;const brkrFatMonthly={};
-  BRKR_CORE.forEach(b=>brkrFatMonthly[b]=Array(12).fill(0));
-  fatData.forEach(r=>{if(r.date.getFullYear()!==fatYear)return;const mo=r.date.getMonth();const bs=getBrokers(r.brkr);const share=bs.length>0?r.fatturato/bs.length:0;bs.forEach(b=>{if(BRKR_CORE.includes(b))brkrFatMonthly[b][mo]+=share;});});
-  return{months,monthCount,monthComm,monthInv,topChrtr,chrtrFix,topOws,brkrCount,topPairs,topOffices,brkrFixYTD_cur,brkrFixYTD_prev,brkrFatYTD_cur,brkrFatYTD_prev,brkrByYear,allYears,brkrFatMonthly,fatYear,curYear,prevYear,totalFix:gfData.length,totalComm:gfData.reduce((s,r)=>s+r.minComm,0),totalFat:fatData.reduce((s,r)=>s+r.fatturato,0),uniqueChrtr:new Set(gfData.map(r=>r.chrtr)).size};
+
+function parseGF(rows) {
+  // rows[0] = headers (title row already skipped via range=A2:Z)
+  const headers = rows[0].map(h => h ? h.trim() : '');
+  const idx = {};
+  headers.forEach((h,i) => idx[h] = i);
+
+  return rows.slice(1)
+    .filter(row => row.some(c => c && c.trim() !== ''))  // skip empty rows
+    .filter(row => {
+      const mc = row[idx['MIN. COMM']];
+      return mc && mc.trim() !== '' && parseNum(mc) !== null;
+    })
+    .map(row => ({
+      date:   parseDate(row[idx['CP DATE']]),
+      ows:    (row[idx['OWS']] || '').trim(),
+      chrtr:  (row[idx['CHRTR']] || '').trim(),
+      vsl:    (row[idx['VSL']] || '').trim(),
+      minComm: parseNum(row[idx['MIN. COMM']]) || 0,
+      brkr:   (row[idx['GENOA BRKR']] || '').trim(),
+      office: (row[idx['OFFICE INVOICING']] || '').trim(),
+    }))
+    .filter(r => r.date !== null && r.minComm > 0);
 }
-let charts={};
-function destroyCharts(){Object.values(charts).forEach(c=>c.destroy());charts={};}
-function render(d){
+
+function parseFAT(rows) {
+  // rows[0] = headers
+  const headers = rows[0].map(h => h ? h.trim() : '');
+  const idx = {};
+  headers.forEach((h,i) => idx[h] = i);
+
+  // FATTURATO column — find it (exclude TOT FATTURATO etc.)
+  const fatIdx = headers.findIndex(h => h.toUpperCase().includes('FATTURATO') && !h.toUpperCase().includes('TOT'));
+
+  return rows.slice(1)
+    .filter(row => row.some(c => c && c.trim() !== ''))  // skip empty rows
+    .map(row => ({
+      date:     parseDate(row[idx['CP DATE']]),
+      ows:      (row[idx['OWS']] || '').trim(),
+      brkr:     (row[idx['GENOA BRKR']] || '').trim(),
+      fatturato: fatIdx >= 0 ? (parseNum(row[fatIdx]) || 0) : 0,
+    }))
+    .filter(r => r.date !== null);
+}
+
+// ── COMPUTE ───────────────────────────────────────────────────────────────────
+function compute(gfData, fatData) {
+  // ─ Monthly aggregations
+  const monthSet = new Set();
+  gfData.forEach(r => monthSet.add(monthKey(r.date)));
+  const months = Array.from(monthSet).sort();
+
+  const monthCount = {}, monthComm = {}, monthInv = {};
+  months.forEach(m => { monthCount[m]=0; monthComm[m]=0; monthInv[m]=0; });
+  gfData.forEach(r => {
+    const m = monthKey(r.date);
+    if (monthCount[m] !== undefined) { monthCount[m]++; monthComm[m] += r.minComm; }
+  });
+  fatData.forEach(r => {
+    const m = monthKey(r.date);
+    if (monthInv[m] !== undefined) monthInv[m] += r.fatturato;
+  });
+
+  // ─ Top charterers
+  const chrtrComm = {}, chrtrFix = {};
+  gfData.forEach(r => {
+    chrtrComm[r.chrtr] = (chrtrComm[r.chrtr]||0) + r.minComm;
+    chrtrFix[r.chrtr]  = (chrtrFix[r.chrtr]||0) + 1;
+  });
+  const topChrtr = Object.entries(chrtrComm).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  // ─ Top OWS by fatturato
+  const owsFat = {};
+  fatData.forEach(r => { owsFat[r.ows] = (owsFat[r.ows]||0) + r.fatturato; });
+  const topOws = Object.entries(owsFat).filter(e=>e[0]!=='').sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  // ─ Broker individual counts
+  const brkrCount = {};
+  gfData.forEach(r => getBrokers(r.brkr).forEach(b => { brkrCount[b] = (brkrCount[b]||0)+1; }));
+
+  // ─ Broker pairs
+  const pairCount = {};
+  gfData.forEach(r => {
+    const bs = getBrokers(r.brkr);
+    if (bs.length >= 2) {
+      for (let i=0;i<bs.length;i++) for(let j=i+1;j<bs.length;j++) {
+        const p = normPair(bs[i],bs[j]);
+        pairCount[p] = (pairCount[p]||0)+1;
+      }
+    }
+  });
+  const topPairs = Object.entries(pairCount).sort((a,b)=>b[1]-a[1]).slice(0,8);
+
+  // ─ Office distribution
+  const offCount = {};
+  gfData.forEach(r => { if(r.office) offCount[r.office]=(offCount[r.office]||0)+1; });
+  const topOffices = Object.entries(offCount).sort((a,b)=>b[1]-a[1]);
+
+  // ─ Broker YTD (Jan-Mar current year vs previous year)
+  const curYear = new Date().getFullYear();
+  const prevYear = curYear - 1;
+  const brkrFixYTD_cur={}, brkrFixYTD_prev={};
+  const brkrFatYTD_cur={}, brkrFatYTD_prev={};
+  BRKR_CORE.forEach(b => { brkrFixYTD_cur[b]=0; brkrFixYTD_prev[b]=0; brkrFatYTD_cur[b]=0; brkrFatYTD_prev[b]=0; });
+
+  const curMonth = new Date().getMonth(); // 0-indexed
+  gfData.forEach(r => {
+    const y = r.date.getFullYear(), mo = r.date.getMonth();
+    if (mo > curMonth) return;
+    getBrokers(r.brkr).forEach(b => {
+      if (!BRKR_CORE.includes(b)) return;
+      if (y === curYear)  brkrFixYTD_cur[b]++;
+      if (y === prevYear) brkrFixYTD_prev[b]++;
+    });
+  });
+  fatData.forEach(r => {
+    const y = r.date.getFullYear(), mo = r.date.getMonth();
+    if (mo > curMonth) return;
+    const bs = getBrokers(r.brkr);
+    const share = bs.length > 0 ? r.fatturato / bs.length : 0;
+    bs.forEach(b => {
+      if (!BRKR_CORE.includes(b)) return;
+      if (y === curYear)  brkrFatYTD_cur[b]  += share;
+      if (y === prevYear) brkrFatYTD_prev[b] += share;
+    });
+  });
+
+  // ─ Broker by year
+  const allYears = [...new Set(gfData.map(r=>r.date.getFullYear()))].sort();
+  const brkrByYear = {};
+  allYears.forEach(y => {
+    brkrByYear[y] = {};
+    BRKR_CORE.forEach(b => brkrByYear[y][b] = 0);
+  });
+  gfData.forEach(r => {
+    const y = r.date.getFullYear();
+    getBrokers(r.brkr).forEach(b => { if(BRKR_CORE.includes(b)) brkrByYear[y][b]++; });
+  });
+
+  // ─ Monthly fatturato by broker (previous full year)
+  const fatYear = prevYear;
+  const brkrFatMonthly = {};
+  BRKR_CORE.forEach(b => brkrFatMonthly[b] = Array(12).fill(0));
+  fatData.forEach(r => {
+    if (r.date.getFullYear() !== fatYear) return;
+    const mo = r.date.getMonth();
+    const bs = getBrokers(r.brkr);
+    const share = bs.length > 0 ? r.fatturato / bs.length : 0;
+    bs.forEach(b => { if(BRKR_CORE.includes(b)) brkrFatMonthly[b][mo] += share; });
+  });
+
+  return {
+    months, monthCount, monthComm, monthInv,
+    topChrtr, chrtrFix, topOws,
+    brkrCount, topPairs, topOffices,
+    brkrFixYTD_cur, brkrFixYTD_prev,
+    brkrFatYTD_cur, brkrFatYTD_prev,
+    brkrByYear, allYears, brkrFatMonthly, fatYear,
+    curYear, prevYear,
+    totalFix: gfData.length,
+    totalComm: gfData.reduce((s,r)=>s+r.minComm,0),
+    totalFat: fatData.reduce((s,r)=>s+r.fatturato,0),
+    uniqueChrtr: new Set(gfData.map(r=>r.chrtr)).size,
+  };
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+let charts = {};
+
+function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
+
+function render(d) {
   destroyCharts();
-  document.getElementById('kpi-fix').textContent=d.totalFix.toLocaleString('it-IT');
-  document.getElementById('kpi-months').textContent=d.months.length+' mesi di attività';
-  document.getElementById('kpi-comm').textContent=fmtM(d.totalComm);
-  document.getElementById('kpi-fat').textContent=fmtM(d.totalFat);
-  document.getElementById('kpi-avg').textContent=fmtM(d.totalComm/d.totalFix);
-  document.getElementById('kpi-chrtr').textContent=d.uniqueChrtr;
-  document.getElementById('last-updated').textContent='↻ '+new Date().toLocaleString('it-IT',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-  const monthLabels=d.months.map(monthLabel);
-  const countArr=d.months.map(m=>d.monthCount[m]);
-  const commArr=d.months.map(m=>d.monthComm[m]);
-  const invArr=d.months.map(m=>d.monthInv[m]);
-  const maxCount=Math.max(...countArr);
-  charts.c1=new Chart(document.getElementById('chartMonthlyCount'),{type:'bar',data:{labels:monthLabels,datasets:[{label:'Fixture',data:countArr,backgroundColor:countArr.map(v=>v===maxCount?'#FFC000':'rgba(46,117,182,0.75)'),borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},scales:{x:{grid:{color:GC}},y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}}}});
-  charts.c2=new Chart(document.getElementById('chartMonthlyComm'),{type:'bar',data:{labels:monthLabels,datasets:[{label:'Commissione Min.',data:commArr,backgroundColor:'rgba(46,117,182,0.7)',borderRadius:4,borderSkipped:false,order:2},{label:'Fatturato',data:invArr,backgroundColor:'rgba(112,173,71,0.7)',borderRadius:4,borderSkipped:false,order:2},{label:'Trend Comm.',data:commArr,type:'line',borderColor:'#FFC000',borderWidth:2,pointRadius:3,pointBackgroundColor:'#FFC000',tension:0.4,fill:false,order:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},scales:{x:{grid:{color:GC}},y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}}}}});
-  const chrtrLabels=d.topChrtr.map(e=>e[0]),chrtrVals=d.topChrtr.map(e=>e[1]);
-  charts.c3=new Chart(document.getElementById('chartTopChrtr'),{type:'bar',data:{labels:chrtrLabels,datasets:[{label:'Min. Comm ($)',data:chrtrVals,backgroundColor:PAL.slice(0,chrtrLabels.length),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},scales:{x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}},y:{grid:{color:'transparent'}}}}});
-  const owsLabels=d.topOws.map(e=>e[0]),owsVals=d.topOws.map(e=>e[1]);
-  charts.c4=new Chart(document.getElementById('chartTopOWS'),{type:'bar',data:{labels:owsLabels,datasets:[{label:'Fatturato ($)',data:owsVals,backgroundColor:PAL.slice(0,owsLabels.length).map((_,i)=>PAL[(i+2)%PAL.length]),borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},scales:{x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}},y:{grid:{color:'transparent'}}}}});
-  const brkrSorted=BRKR_CORE.filter(b=>d.brkrCount[b]);
-  charts.c5=new Chart(document.getElementById('chartBrkrIndiv'),{type:'doughnut',data:{labels:brkrSorted,datasets:[{data:brkrSorted.map(b=>d.brkrCount[b]),backgroundColor:['#2E75B6','#FFC000','#ED7D31','#70AD47','#9B59B6','#E74C3C'],borderWidth:2,borderColor:'#162032',hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{boxWidth:12,padding:12}},tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed+' fixture'}}}}});
-  const pLabels=d.topPairs.map(e=>e[0]),pVals=d.topPairs.map(e=>e[1]);
-  charts.c6=new Chart(document.getElementById('chartBrkrPairs'),{type:'bar',data:{labels:pLabels,datasets:[{label:'Fixture condivise',data:pVals,backgroundColor:pVals.map((_,i)=>i===0?'#FFC000':i===1?'#ED7D31':'rgba(46,117,182,0.65)'),borderRadius:6,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture in coppia'}}},scales:{x:{grid:{color:GC},ticks:{font:{size:10}}},y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}}}});
-  const offLabels=d.topOffices.map(e=>e[0]),offVals=d.topOffices.map(e=>e[1]);
-  charts.c7=new Chart(document.getElementById('chartOffice'),{type:'polarArea',data:{labels:offLabels,datasets:[{data:offVals,backgroundColor:PAL.map(c=>c+'cc'),borderColor:'#162032',borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:10}}}},scales:{r:{grid:{color:GC},ticks:{display:false}}}}});
-  charts.c8=new Chart(document.getElementById('chartBrkrFixYTD'),{type:'bar',data:{labels:BRKR_CORE,datasets:[{label:'Gen–Mar '+d.curYear,data:BRKR_CORE.map(b=>d.brkrFixYTD_cur[b]),backgroundColor:'rgba(46,117,182,0.85)',borderRadius:5,borderSkipped:false},{label:'Gen–Mar '+d.prevYear,data:BRKR_CORE.map(b=>d.brkrFixYTD_prev[b]),backgroundColor:'rgba(255,192,0,0.65)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},scales:{x:{grid:{color:GC}},y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}}}});
-  charts.c9=new Chart(document.getElementById('chartBrkrFatYTD'),{type:'bar',data:{labels:BRKR_CORE,datasets:[{label:'Gen–Mar '+d.curYear,data:BRKR_CORE.map(b=>d.brkrFatYTD_cur[b]),backgroundColor:'rgba(112,173,71,0.85)',borderRadius:5,borderSkipped:false},{label:'Gen–Mar '+d.prevYear,data:BRKR_CORE.map(b=>d.brkrFatYTD_prev[b]),backgroundColor:'rgba(237,125,49,0.65)',borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}},tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},scales:{x:{grid:{color:GC}},y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}}}}});
-  const yColors=['rgba(155,89,182,0.7)','rgba(46,117,182,0.85)','rgba(255,192,0,0.75)','rgba(112,173,71,0.8)'];
-  charts.c10=new Chart(document.getElementById('chartBrkrFixYear'),{type:'bar',data:{labels:BRKR_CORE,datasets:d.allYears.map((y,i)=>({label:String(y),data:BRKR_CORE.map(b=>d.brkrByYear[y][b]||0),backgroundColor:yColors[i]||PAL[i],borderRadius:4,borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}},tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},scales:{x:{grid:{color:GC}},y:{grid:{color:GC},beginAtZero:true}}}});
-  const monthNames=['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-  const brkrColors11=['rgba(46,117,182,0.85)','rgba(255,192,0,0.85)','rgba(112,173,71,0.85)','rgba(237,125,49,0.85)','rgba(155,89,182,0.85)','rgba(231,76,60,0.85)'];
-  charts.c11=new Chart(document.getElementById('chartBrkrFatMonthly'),{type:'bar',data:{labels:monthNames,datasets:BRKR_CORE.filter(b=>d.brkrFatMonthly[b].some(v=>v>0)).map((b,i)=>({label:b,data:d.brkrFatMonthly[b],backgroundColor:brkrColors11[i],borderSkipped:false}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{boxWidth:12}},tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString('it-IT')}}},scales:{x:{stacked:true,grid:{color:GC}},y:{stacked:true,grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}}}}});
-  const badgeCls=['badge-blue','badge-green','badge-orange','badge-gold','badge-purple','badge-blue','badge-green','badge-orange','badge-gold','badge-purple'];
-  const tblC=document.getElementById('tblChrtr');tblC.innerHTML='';
-  d.topChrtr.forEach(([c,comm],i)=>{tblC.innerHTML+=`<tr><td>${i+1}</td><td><span class="badge ${badgeCls[i]}">${c}</span></td><td class="num">${fmtN(comm)}</td><td class="num">${d.chrtrFix[c]||0}</td></tr>`;});
-  const tblM=document.getElementById('tblMonthly');tblM.innerHTML='';
-  const maxComm=Math.max(...commArr);
-  d.months.forEach((m,i)=>{const avg=countArr[i]>0?Math.round(commArr[i]/countArr[i]):0;const pct=Math.round(commArr[i]/maxComm*100);tblM.innerHTML+=`<tr><td><strong>${monthLabel(m)}</strong></td><td class="num">${countArr[i]}</td><td class="num">${fmtN(commArr[i])}</td><td class="num">${invArr[i]>0?fmtN(invArr[i]):'—'}</td><td class="num">${fmtN(avg)}</td><td style="width:120px;padding-right:18px;"><div class="bar-inline"><div class="bar-inline-fill" style="width:${pct}%"></div></div></td></tr>`;});
+
+  // KPIs
+  document.getElementById('kpi-fix').textContent = d.totalFix.toLocaleString('it-IT');
+  document.getElementById('kpi-months').textContent = d.months.length + ' mesi di attività';
+  document.getElementById('kpi-comm').textContent = fmtM(d.totalComm);
+  document.getElementById('kpi-fat').textContent = fmtM(d.totalFat);
+  document.getElementById('kpi-avg').textContent = fmtM(d.totalComm / d.totalFix);
+  document.getElementById('kpi-chrtr').textContent = d.uniqueChrtr;
+  document.getElementById('last-updated').textContent = '↻ ' + new Date().toLocaleString('it-IT', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+
+  const monthLabels = d.months.map(monthLabel);
+  const countArr   = d.months.map(m => d.monthCount[m]);
+  const commArr    = d.months.map(m => d.monthComm[m]);
+  const invArr     = d.months.map(m => d.monthInv[m]);
+  const maxCount   = Math.max(...countArr);
+
+  // 1 Monthly count
+  charts.c1 = new Chart(document.getElementById('chartMonthlyCount'), {
+    type:'bar',
+    data:{ labels: monthLabels, datasets:[{ label:'Fixture', data:countArr,
+      backgroundColor: countArr.map(v => v===maxCount?'#FFC000':'rgba(46,117,182,0.75)'),
+      borderRadius:5, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},
+      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
+  });
+
+  // 2 Monthly comm vs inv
+  charts.c2 = new Chart(document.getElementById('chartMonthlyComm'), {
+    type:'bar',
+    data:{ labels: monthLabels, datasets:[
+      { label:'Commissione Min.', data:commArr, backgroundColor:'rgba(46,117,182,0.7)', borderRadius:4, borderSkipped:false, order:2 },
+      { label:'Fatturato', data:invArr, backgroundColor:'rgba(112,173,71,0.7)', borderRadius:4, borderSkipped:false, order:2 },
+      { label:'Trend Comm.', data:commArr, type:'line', borderColor:'#FFC000', borderWidth:2, pointRadius:3, pointBackgroundColor:'#FFC000', tension:0.4, fill:false, order:1 }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
+      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+  });
+
+  // 3 Top charterers
+  const chrtrLabels = d.topChrtr.map(e=>e[0]);
+  const chrtrVals   = d.topChrtr.map(e=>e[1]);
+  charts.c3 = new Chart(document.getElementById('chartTopChrtr'), {
+    type:'bar',
+    data:{ labels:chrtrLabels, datasets:[{ label:'Min. Comm ($)', data:chrtrVals,
+      backgroundColor:PAL.slice(0,chrtrLabels.length), borderRadius:4, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
+      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
+  });
+
+  // 4 Top OWS
+  const owsLabels = d.topOws.map(e=>e[0]);
+  const owsVals   = d.topOws.map(e=>e[1]);
+  charts.c4 = new Chart(document.getElementById('chartTopOWS'), {
+    type:'bar',
+    data:{ labels:owsLabels, datasets:[{ label:'Fatturato ($)', data:owsVals,
+      backgroundColor:PAL.slice(0,owsLabels.length).map((_,i)=>PAL[(i+2)%PAL.length]), borderRadius:4, borderSkipped:false }] },
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
+      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
+  });
+
+  // 5 Broker individual donut
+  const brkrSorted = BRKR_CORE.filter(b=>d.brkrCount[b]);
+  charts.c5 = new Chart(document.getElementById('chartBrkrIndiv'), {
+    type:'doughnut',
+    data:{ labels:brkrSorted, datasets:[{ data:brkrSorted.map(b=>d.brkrCount[b]),
+      backgroundColor:['#2E75B6','#FFC000','#ED7D31','#70AD47','#9B59B6','#E74C3C'],
+      borderWidth:2, borderColor:'#162032', hoverOffset:8 }] },
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%',
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:12}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed+' fixture'}} } }
+  });
+
+  // 6 Broker pairs
+  const pLabels = d.topPairs.map(e=>e[0]);
+  const pVals   = d.topPairs.map(e=>e[1]);
+  charts.c6 = new Chart(document.getElementById('chartBrkrPairs'), {
+    type:'bar',
+    data:{ labels:pLabels, datasets:[{ label:'Fixture condivise', data:pVals,
+      backgroundColor:pVals.map((_,i)=>i===0?'#FFC000':i===1?'#ED7D31':'rgba(46,117,182,0.65)'),
+      borderRadius:6, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture in coppia'}}},
+      scales:{ x:{grid:{color:GC},ticks:{font:{size:10}}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
+  });
+
+  // 7 Office polar
+  const offLabels = d.topOffices.map(e=>e[0]);
+  const offVals   = d.topOffices.map(e=>e[1]);
+  charts.c7 = new Chart(document.getElementById('chartOffice'), {
+    type:'polarArea',
+    data:{ labels:offLabels, datasets:[{ data:offVals,
+      backgroundColor:PAL.map(c=>c+'cc'), borderColor:'#162032', borderWidth:2 }] },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:10}}}},
+      scales:{ r:{grid:{color:GC},ticks:{display:false}} } }
+  });
+
+  // 8 Broker Fix YTD
+  charts.c8 = new Chart(document.getElementById('chartBrkrFixYTD'), {
+    type:'bar',
+    data:{ labels:BRKR_CORE, datasets:[
+      { label:'Gen–Mar '+d.curYear, data:BRKR_CORE.map(b=>d.brkrFixYTD_cur[b]), backgroundColor:'rgba(46,117,182,0.85)', borderRadius:5, borderSkipped:false },
+      { label:'Gen–Mar '+d.prevYear, data:BRKR_CORE.map(b=>d.brkrFixYTD_prev[b]), backgroundColor:'rgba(255,192,0,0.65)', borderRadius:5, borderSkipped:false },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},
+      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
+  });
+
+  // 9 Broker Fat YTD
+  charts.c9 = new Chart(document.getElementById('chartBrkrFatYTD'), {
+    type:'bar',
+    data:{ labels:BRKR_CORE, datasets:[
+      { label:'Gen–Mar '+d.curYear,  data:BRKR_CORE.map(b=>d.brkrFatYTD_cur[b]),  backgroundColor:'rgba(112,173,71,0.85)', borderRadius:5, borderSkipped:false },
+      { label:'Gen–Mar '+d.prevYear, data:BRKR_CORE.map(b=>d.brkrFatYTD_prev[b]), backgroundColor:'rgba(237,125,49,0.65)', borderRadius:5, borderSkipped:false },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
+      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+  });
+
+  // 10 Broker Fix by year
+  const yColors = ['rgba(155,89,182,0.7)','rgba(46,117,182,0.85)','rgba(255,192,0,0.75)','rgba(112,173,71,0.8)'];
+  charts.c10 = new Chart(document.getElementById('chartBrkrFixYear'), {
+    type:'bar',
+    data:{ labels:BRKR_CORE, datasets: d.allYears.map((y,i)=>({
+      label: String(y), data:BRKR_CORE.map(b=>d.brkrByYear[y][b]||0),
+      backgroundColor:yColors[i]||PAL[i], borderRadius:4, borderSkipped:false
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},
+      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true} } }
+  });
+
+  // 11 Monthly fatturato stacked (prevYear)
+  const monthNames = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  const brkrColors11 = ['rgba(46,117,182,0.85)','rgba(255,192,0,0.85)','rgba(112,173,71,0.85)','rgba(237,125,49,0.85)','rgba(155,89,182,0.85)','rgba(231,76,60,0.85)'];
+  charts.c11 = new Chart(document.getElementById('chartBrkrFatMonthly'), {
+    type:'bar',
+    data:{ labels:monthNames, datasets: BRKR_CORE.filter(b=>d.brkrFatMonthly[b].some(v=>v>0)).map((b,i)=>({
+      label:b, data:d.brkrFatMonthly[b], backgroundColor:brkrColors11[i], borderSkipped:false
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{boxWidth:12}},
+        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString('it-IT')}}},
+      scales:{ x:{stacked:true,grid:{color:GC}}, y:{stacked:true,grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+  });
+
+  // ─ Tables
+  const badgeCls = ['badge-blue','badge-green','badge-orange','badge-gold','badge-purple','badge-blue','badge-green','badge-orange','badge-gold','badge-purple'];
+  const tblC = document.getElementById('tblChrtr');
+  tblC.innerHTML = '';
+  d.topChrtr.forEach(([c,comm],i) => {
+    tblC.innerHTML += `<tr><td>${i+1}</td><td><span class="badge ${badgeCls[i]}">${c}</span></td><td class="num">${fmtN(comm)}</td><td class="num">${d.chrtrFix[c]||0}</td></tr>`;
+  });
+
+  const tblM = document.getElementById('tblMonthly');
+  tblM.innerHTML = '';
+  const maxComm = Math.max(...commArr);
+  d.months.forEach((m,i) => {
+    const avg = countArr[i] > 0 ? Math.round(commArr[i]/countArr[i]) : 0;
+    const pct = Math.round(commArr[i]/maxComm*100);
+    tblM.innerHTML += `<tr>
+      <td><strong>${monthLabel(m)}</strong></td>
+      <td class="num">${countArr[i]}</td>
+      <td class="num">${fmtN(commArr[i])}</td>
+      <td class="num">${invArr[i]>0?fmtN(invArr[i]):'—'}</td>
+      <td class="num">${fmtN(avg)}</td>
+      <td style="width:120px;padding-right:18px;"><div class="bar-inline"><div class="bar-inline-fill" style="width:${pct}%"></div></div></td>
+    </tr>`;
+  });
 }
-async function init(){
-  try{
-    const[gfRows,fatRows]=await Promise.all([fetchSheetJsonp(SHEET_ID,'GENOA FIXTURES',{range:'A2:Z'}),fetchSheetJsonp(SHEET_ID,'FATTURE')]);
-    const gfData=parseGF(gfRows),fatData=parseFAT(fatRows),data=compute(gfData,fatData);
+
+// ── MAIN ──────────────────────────────────────────────────────────────────────
+async function init() {
+  // Rilevazione apertura da file locale
+  if (location.protocol === 'file:') {
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('error-box').classList.add('visible');
+    document.getElementById('error-detail').textContent =
+      'Stai aprendo il file dalla cartella locale (file://). ' +
+      'Il dashboard non può caricare dati da Google Sheets in questa modalità.';
+    const eb = document.getElementById('error-box');
+    eb.innerHTML += `<div style="margin-top:16px;padding:16px;background:#0a2a0a;border:1px solid #70AD47;border-radius:8px;text-align:center;">
+      <p style="color:#70AD47;font-weight:700;font-size:1.1rem;margin-bottom:8px;">✅ Apri il link web invece:</p>
+      <a href="https://facoffff.github.io/milionario/" target="_blank"
+         style="color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
+        https://facoffff.github.io/milionario/
+      </a>
+      <p style="color:#8fa3bf;font-size:0.85rem;margin-top:8px;">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
+    </div>`;
+    return;
+  }
+
+  try {
+    // range=A2:Z → salta la riga titolo "GENOA FIXTURES" e parte dagli header reali
+    const [gfRows, fatRows] = await Promise.all([
+      fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'A2:Z' }),
+      fetchSheetJsonp(SHEET_ID, 'FATTURE')
+    ]);
+    const gfData  = parseGF(gfRows);
+    const fatData = parseFAT(fatRows);
+    const data    = compute(gfData, fatData);
+
     document.getElementById('loader').classList.add('hidden');
     document.getElementById('main').classList.add('visible');
     render(data);
-  }catch(e){
+  } catch(e) {
     document.getElementById('loader').classList.add('hidden');
     document.getElementById('error-box').classList.add('visible');
-    document.getElementById('error-detail').textContent=e.message;
+    document.getElementById('error-detail').textContent = e.message;
     console.error(e);
   }
 }
+
 init();
 </script>
 </body>
