@@ -158,7 +158,7 @@
     </div>
   </div>
 
-  <!-- CHARTERER & OWS-->
+  <!-- CHARTERER & OWS -->
   <p class="section-title">🚢 Charterer &amp; Armatori</p>
   <div class="grid-2">
     <div class="card">
@@ -208,6 +208,38 @@
     <div class="card">
       <h3>Andamento Mensile Fatturato 2025<strong>Per broker office ($)</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrFatMonthly"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ANALISI INDIVIDUALE BROKER -->
+  <p class="section-title">🔬 Analisi Individuale Broker</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Commissione Media per Fixture<strong>Valore medio di ogni deal per broker ($)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrAvgComm"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Trend Mensile Fixture<strong>Numero di fixture per broker nel tempo</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrTrend"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Quota di Mercato Mensile<strong>% fixture per broker ogni mese</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrShare"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Fatturato Cumulativo 2025<strong>Crescita progressiva del fatturato per broker ($)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartBrkrCumFat"></canvas></div>
+    </div>
+  </div>
+  <div class="grid-1">
+    <div class="card">
+      <h3>Riepilogo per Broker</h3>
+      <table class="data-table">
+        <thead><tr><th>Broker</th><th class="num">Fixture Totali</th><th class="num">Comm. Totale ($)</th><th class="num">Comm. Media/Fix ($)</th><th class="num">Fatturato ($)</th><th class="num">Fat./Fix ($)</th><th class="num">Charterer Unici</th></tr></thead>
+        <tbody id="tblBrkr"></tbody>
+      </table>
     </div>
   </div>
 
@@ -503,6 +535,55 @@ function compute(gfData, fatData) {
     bs.forEach(b => { if(BRKR_CORE.includes(b)) brkrFatMonthly[b][mo] += share; });
   });
 
+  // ─ Commissione media per fixture per broker
+  const brkrAvgComm = {};
+  BRKR_CORE.forEach(b => {
+    const fixes = gfData.filter(r => getBrokers(r.brkr).includes(b));
+    brkrAvgComm[b] = fixes.length > 0 ? fixes.reduce((s,r)=>s+r.minComm,0) / fixes.length : 0;
+  });
+
+  // ─ Trend mensile fixture per broker
+  const brkrMonthlyFix = {};
+  BRKR_CORE.forEach(b => { brkrMonthlyFix[b] = months.map(()=>0); });
+  gfData.forEach(r => {
+    const mi = months.indexOf(monthKey(r.date));
+    if (mi < 0) return;
+    getBrokers(r.brkr).forEach(b => { if(BRKR_CORE.includes(b)) brkrMonthlyFix[b][mi]++; });
+  });
+
+  // ─ Quota mensile % per broker
+  const brkrSharePct = {};
+  BRKR_CORE.forEach(b => { brkrSharePct[b] = months.map((m,i) => {
+    const tot = BRKR_CORE.reduce((s,x)=>s+brkrMonthlyFix[x][i],0);
+    return tot > 0 ? Math.round(brkrMonthlyFix[b][i]/tot*1000)/10 : 0;
+  }); });
+
+  // ─ Fatturato cumulativo 2025 per broker
+  const cumFatYear = prevYear;
+  const brkrCumFat = {};
+  BRKR_CORE.forEach(b => { brkrCumFat[b] = Array(12).fill(0); });
+  fatData.forEach(r => {
+    if (r.date.getFullYear() !== cumFatYear) return;
+    const mo = r.date.getMonth();
+    const bs = getBrokers(r.brkr);
+    const share = bs.length > 0 ? r.fatturato / bs.length : 0;
+    bs.forEach(b => { if(BRKR_CORE.includes(b)) brkrCumFat[b][mo] += share; });
+  });
+  // make cumulative
+  BRKR_CORE.forEach(b => {
+    for(let i=1;i<12;i++) brkrCumFat[b][i] += brkrCumFat[b][i-1];
+  });
+
+  // ─ Riepilogo tabella per broker
+  const brkrSummary = BRKR_CORE.map(b => {
+    const fixes = gfData.filter(r => getBrokers(r.brkr).includes(b));
+    const totalComm = fixes.reduce((s,r)=>s+r.minComm,0);
+    const fats = fatData.filter(r => getBrokers(r.brkr).includes(b));
+    const totalFat = fats.reduce((s,r)=>s+r.fatturato/getBrokers(r.brkr).length,0);
+    const charterers = new Set(fixes.map(r=>r.chrtr).filter(Boolean)).size;
+    return { broker:b, fix:fixes.length, comm:totalComm, avgComm: fixes.length>0?totalComm/fixes.length:0, fat:totalFat, avgFat:fixes.length>0?totalFat/fixes.length:0, charterers };
+  }).filter(r=>r.fix>0).sort((a,b)=>b.comm-a.comm);
+
   return {
     months, monthCount, monthComm, monthInv,
     topChrtr, chrtrFix, topOws,
@@ -510,6 +591,7 @@ function compute(gfData, fatData) {
     brkrFixYTD_cur, brkrFixYTD_prev,
     brkrFatYTD_cur, brkrFatYTD_prev,
     brkrByYear, allYears, brkrFatMonthly, fatYear,
+    brkrAvgComm, brkrMonthlyFix, brkrSharePct, brkrCumFat, brkrSummary, cumFatYear,
     curYear, prevYear,
     totalFix: gfData.length,
     totalComm: gfData.reduce((s,r)=>s+r.minComm,0),
@@ -675,6 +757,85 @@ function render(d) {
       plugins:{ legend:{labels:{boxWidth:12}},
         tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString('it-IT')}}},
       scales:{ x:{stacked:true,grid:{color:GC}}, y:{stacked:true,grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+  });
+
+  // ─ Nuovi grafici individuali broker
+  const brkrLineColors = ['#2E75B6','#FFC000','#ED7D31','#70AD47','#9B59B6','#E74C3C'];
+  const brkrFill       = ['rgba(46,117,182,0.15)','rgba(255,192,0,0.15)','rgba(237,125,49,0.15)','rgba(112,173,71,0.15)','rgba(155,89,182,0.15)','rgba(231,76,60,0.15)'];
+  const activeBrkrs    = BRKR_CORE.filter(b => d.brkrCount[b] > 0);
+
+  // 12 — Commissione media per fixture
+  charts.c12 = new Chart(document.getElementById('chartBrkrAvgComm'), {
+    type:'bar',
+    data:{ labels: activeBrkrs, datasets:[{
+      label:'Comm. media/fix ($)',
+      data: activeBrkrs.map(b => Math.round(d.brkrAvgComm[b])),
+      backgroundColor: activeBrkrs.map((_,i) => brkrLineColors[i]+'cc'),
+      borderRadius:6, borderSkipped:false
+    }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
+      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
+  });
+
+  // 13 — Trend mensile fixture (multi-line)
+  charts.c13 = new Chart(document.getElementById('chartBrkrTrend'), {
+    type:'line',
+    data:{ labels: monthLabels, datasets: activeBrkrs.map((b,i)=>({
+      label:b, data:d.brkrMonthlyFix[b],
+      borderColor:brkrLineColors[i], backgroundColor:brkrFill[i],
+      borderWidth:2, pointRadius:3, pointHoverRadius:5, tension:0.35, fill:false
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}},
+        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+' fix'}}},
+      scales:{ x:{grid:{color:GC},ticks:{maxRotation:45}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:2}} } }
+  });
+
+  // 14 — Quota mensile % (stacked 100% bar)
+  charts.c14 = new Chart(document.getElementById('chartBrkrShare'), {
+    type:'bar',
+    data:{ labels: monthLabels, datasets: activeBrkrs.map((b,i)=>({
+      label:b, data:d.brkrSharePct[b],
+      backgroundColor:brkrLineColors[i]+'cc', borderSkipped:false, borderWidth:1, borderColor:'#162032'
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}},
+        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+'%'}}},
+      scales:{
+        x:{stacked:true,grid:{color:GC},ticks:{maxRotation:45}},
+        y:{stacked:true,grid:{color:GC},max:100,ticks:{callback:v=>v+'%'}} } }
+  });
+
+  // 15 — Fatturato cumulativo (anno previsto)
+  const monthNamesShort = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
+  charts.c15 = new Chart(document.getElementById('chartBrkrCumFat'), {
+    type:'line',
+    data:{ labels: monthNamesShort, datasets: activeBrkrs.map((b,i)=>({
+      label:b, data:d.brkrCumFat[b].map(v=>v>0?Math.round(v):null),
+      borderColor:brkrLineColors[i], backgroundColor:brkrFill[i],
+      borderWidth:2.5, pointRadius:3, pointHoverRadius:5, tension:0.3, fill:true
+    }))},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}},
+        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y?.toLocaleString('it-IT')}}},
+      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+  });
+
+  // ─ Tabella riepilogo broker
+  const tblBrkr = document.getElementById('tblBrkr');
+  tblBrkr.innerHTML = '';
+  d.brkrSummary.forEach((r,i) => {
+    const colClass = ['badge-blue','badge-gold','badge-orange','badge-green','badge-purple','badge-blue'][i]||'badge-blue';
+    tblBrkr.innerHTML += `<tr>
+      <td><span class="badge ${colClass}">${r.broker}</span></td>
+      <td class="num">${r.fix}</td>
+      <td class="num">${fmtN(r.comm)}</td>
+      <td class="num">${fmtN(r.avgComm)}</td>
+      <td class="num">${r.fat>0?fmtN(r.fat):'—'}</td>
+      <td class="num">${r.avgFat>0?fmtN(r.avgFat):'—'}</td>
+      <td class="num">${r.charterers}</td>
+    </tr>`;
   });
 
   // ─ Tables
