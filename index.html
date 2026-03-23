@@ -44,7 +44,7 @@
   #main.visible{display:block;}
 
   /* KPI */
-  .kpi-strip{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin-bottom:28px;}
+  .kpi-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px;}
   .kpi{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;text-align:center;position:relative;overflow:hidden;}
   .kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
   .kpi.blue::before{background:var(--mid);}
@@ -140,7 +140,6 @@
   <div class="kpi-strip">
     <div class="kpi blue"><div class="kpi-label">Fixture Totali</div><div class="kpi-value" id="kpi-fix">—</div><div class="kpi-sub" id="kpi-months">—</div></div>
     <div class="kpi green"><div class="kpi-label">Commissione Totale</div><div class="kpi-value" id="kpi-comm">—</div><div class="kpi-sub">MIN. COMM lorda</div></div>
-    <div class="kpi orange"><div class="kpi-label">Fatturato</div><div class="kpi-value" id="kpi-fat">—</div><div class="kpi-sub">Importo fatturato</div></div>
     <div class="kpi gold"><div class="kpi-label">Comm. Media / Fixture</div><div class="kpi-value" id="kpi-avg">—</div><div class="kpi-sub">Per singola fixture</div></div>
     <div class="kpi purple"><div class="kpi-label">Charterer Unici</div><div class="kpi-value" id="kpi-chrtr">—</div><div class="kpi-sub">Partner commerciali attivi</div></div>
   </div>
@@ -153,7 +152,7 @@
       <div class="chart-wrap tall"><canvas id="chartMonthlyCount"></canvas></div>
     </div>
     <div class="card">
-      <h3>Commissione vs Fatturato<strong>Commissione minima vs importo fatturato ($)</strong></h3>
+      <h3>Commissione Mensile<strong>Commissione minima mensile con trend ($)</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartMonthlyComm"></canvas></div>
     </div>
   </div>
@@ -166,7 +165,7 @@
       <div class="chart-wrap tall"><canvas id="chartTopChrtr"></canvas></div>
     </div>
     <div class="card">
-      <h3>Top Armatori (OWS)<strong>I 10 owner per importo fatturato ($)</strong></h3>
+      <h3>Top Armatori (OWS)<strong>I 10 owner per numero di fixture</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartTopOWS"></canvas></div>
     </div>
   </div>
@@ -196,18 +195,8 @@
       <div class="chart-wrap tall"><canvas id="chartBrkrFixYTD"></canvas></div>
     </div>
     <div class="card">
-      <h3>Fatturato per Broker<strong>YTD Gen–Mar 2026 vs Gen–Mar 2025 ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartBrkrFatYTD"></canvas></div>
-    </div>
-  </div>
-  <div class="grid-2">
-    <div class="card">
       <h3>Fixture per Broker per Anno<strong>2024 (parz.) · 2025 (completo) · 2026 (YTD)</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrFixYear"></canvas></div>
-    </div>
-    <div class="card">
-      <h3>Andamento Mensile Fatturato 2025<strong>Per broker office ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartBrkrFatMonthly"></canvas></div>
     </div>
   </div>
 
@@ -223,21 +212,17 @@
       <div class="chart-wrap tall"><canvas id="chartBrkrTrend"></canvas></div>
     </div>
   </div>
-  <div class="grid-2">
+  <div class="grid-1">
     <div class="card">
       <h3>Quota di Mercato Mensile<strong>% fixture per broker ogni mese</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrShare"></canvas></div>
-    </div>
-    <div class="card">
-      <h3>Fatturato Cumulativo 2025<strong>Crescita progressiva del fatturato per broker ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartBrkrCumFat"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
     <div class="card">
       <h3>Riepilogo per Broker</h3>
       <table class="data-table">
-        <thead><tr><th>Broker</th><th class="num">Fixture Totali</th><th class="num">Comm. Totale ($)</th><th class="num">Comm. Media/Fix ($)</th><th class="num">Fatturato ($)</th><th class="num">Fat./Fix ($)</th><th class="num">Charterer Unici</th></tr></thead>
+        <thead><tr><th>Broker</th><th class="num">Fixture Totali</th><th class="num">Comm. Totale ($)</th><th class="num">Comm. Media/Fix ($)</th><th class="num">Charterer Unici</th></tr></thead>
         <tbody id="tblBrkr"></tbody>
       </table>
     </div>
@@ -258,7 +243,7 @@
     <div class="card">
       <h3>Dettaglio Mensile Completo</h3>
       <table class="data-table">
-        <thead><tr><th>Mese</th><th class="num">Fixture</th><th class="num">Min. Comm ($)</th><th class="num">Fatturato ($)</th><th class="num">Comm. Media ($)</th><th>Trend</th></tr></thead>
+        <thead><tr><th>Mese</th><th class="num">Fixture</th><th class="num">Min. Comm ($)</th><th class="num">Comm. Media ($)</th><th>Trend</th></tr></thead>
         <tbody id="tblMonthly"></tbody>
       </table>
     </div>
@@ -270,10 +255,10 @@
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
+// ── CONFIG ──────────────────────────────────────────────────────────────────────────────
 const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
 
-// ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────
+// ── CHART GLOBAL DEFAULTS ────────────────────────────────────────────────────────────────────
 Chart.defaults.color = '#8fa3bf';
 Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
 Chart.defaults.font.size = 11;
@@ -281,7 +266,7 @@ const GC = 'rgba(36,53,84,0.8)';
 const PAL = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
 const BRKR_CORE = ['MPE','LCE','FGA','OPE','SDP','BEE'];
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────────────────────────────────────────────
 const fmtM = v => v >= 1e6 ? '$'+Math.round(v/1e6*10)/10+'M' : v >= 1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+Math.round(v);
 const fmtN = v => '$' + Math.round(v).toLocaleString('it-IT');
 const fmtPct = v => (v*100).toFixed(1)+'%';
@@ -320,7 +305,7 @@ function getBrokers(s) {
 
 function normPair(a, b) { return [a,b].sort().join(' + '); }
 
-// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ───────────────────
+// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ────────────────────
 function fetchSheetJsonp(sheetId, sheetName, opts) {
   opts = opts || {};
   return new Promise((resolve, reject) => {
@@ -409,42 +394,18 @@ function parseGF(rows) {
     .filter(r => r.date !== null && r.minComm > 0);
 }
 
-function parseFAT(rows) {
-  // rows[0] = headers
-  const headers = rows[0].map(h => h ? h.trim() : '');
-  const idx = {};
-  headers.forEach((h,i) => idx[h] = i);
-
-  // FATTURATO column — find it (exclude TOT FATTURATO etc.)
-  const fatIdx = headers.findIndex(h => h.toUpperCase().includes('FATTURATO') && !h.toUpperCase().includes('TOT'));
-
-  return rows.slice(1)
-    .filter(row => row.some(c => c && c.trim() !== ''))  // skip empty rows
-    .map(row => ({
-      date:     parseDate(row[idx['CP DATE']]),
-      ows:      (row[idx['OWS']] || '').trim(),
-      brkr:     (row[idx['GENOA BRKR']] || '').trim(),
-      fatturato: fatIdx >= 0 ? (parseNum(row[fatIdx]) || 0) : 0,
-    }))
-    .filter(r => r.date !== null);
-}
-
-// ── COMPUTE ───────────────────────────────────────────────────────────────────
-function compute(gfData, fatData) {
+// ── COMPUTE ──────────────────────────────────────────────────────────────────────────────
+function compute(gfData) {
   // ─ Monthly aggregations
   const monthSet = new Set();
   gfData.forEach(r => monthSet.add(monthKey(r.date)));
   const months = Array.from(monthSet).sort();
 
-  const monthCount = {}, monthComm = {}, monthInv = {};
-  months.forEach(m => { monthCount[m]=0; monthComm[m]=0; monthInv[m]=0; });
+  const monthCount = {}, monthComm = {};
+  months.forEach(m => { monthCount[m]=0; monthComm[m]=0; });
   gfData.forEach(r => {
     const m = monthKey(r.date);
     if (monthCount[m] !== undefined) { monthCount[m]++; monthComm[m] += r.minComm; }
-  });
-  fatData.forEach(r => {
-    const m = monthKey(r.date);
-    if (monthInv[m] !== undefined) monthInv[m] += r.fatturato;
   });
 
   // ─ Top charterers
@@ -455,10 +416,10 @@ function compute(gfData, fatData) {
   });
   const topChrtr = Object.entries(chrtrComm).sort((a,b)=>b[1]-a[1]).slice(0,10);
 
-  // ─ Top OWS by fatturato
-  const owsFat = {};
-  fatData.forEach(r => { owsFat[r.ows] = (owsFat[r.ows]||0) + r.fatturato; });
-  const topOws = Object.entries(owsFat).filter(e=>e[0]!=='').sort((a,b)=>b[1]-a[1]).slice(0,10);
+  // ─ Top OWS by fixture count
+  const owsFix = {};
+  gfData.forEach(r => { if(r.ows) owsFix[r.ows] = (owsFix[r.ows]||0)+1; });
+  const topOws = Object.entries(owsFix).filter(e=>e[0]!=='').sort((a,b)=>b[1]-a[1]).slice(0,10);
 
   // ─ Broker individual counts
   const brkrCount = {};
@@ -486,8 +447,7 @@ function compute(gfData, fatData) {
   const curYear = new Date().getFullYear();
   const prevYear = curYear - 1;
   const brkrFixYTD_cur={}, brkrFixYTD_prev={};
-  const brkrFatYTD_cur={}, brkrFatYTD_prev={};
-  BRKR_CORE.forEach(b => { brkrFixYTD_cur[b]=0; brkrFixYTD_prev[b]=0; brkrFatYTD_cur[b]=0; brkrFatYTD_prev[b]=0; });
+  BRKR_CORE.forEach(b => { brkrFixYTD_cur[b]=0; brkrFixYTD_prev[b]=0; });
 
   const curMonth = new Date().getMonth(); // 0-indexed
   gfData.forEach(r => {
@@ -497,17 +457,6 @@ function compute(gfData, fatData) {
       if (!BRKR_CORE.includes(b)) return;
       if (y === curYear)  brkrFixYTD_cur[b]++;
       if (y === prevYear) brkrFixYTD_prev[b]++;
-    });
-  });
-  fatData.forEach(r => {
-    const y = r.date.getFullYear(), mo = r.date.getMonth();
-    if (mo > curMonth) return;
-    const bs = getBrokers(r.brkr);
-    const share = bs.length > 0 ? r.fatturato / bs.length : 0;
-    bs.forEach(b => {
-      if (!BRKR_CORE.includes(b)) return;
-      if (y === curYear)  brkrFatYTD_cur[b]  += share;
-      if (y === prevYear) brkrFatYTD_prev[b] += share;
     });
   });
 
@@ -521,18 +470,6 @@ function compute(gfData, fatData) {
   gfData.forEach(r => {
     const y = r.date.getFullYear();
     getBrokers(r.brkr).forEach(b => { if(BRKR_CORE.includes(b)) brkrByYear[y][b]++; });
-  });
-
-  // ─ Monthly fatturato by broker (previous full year)
-  const fatYear = prevYear;
-  const brkrFatMonthly = {};
-  BRKR_CORE.forEach(b => brkrFatMonthly[b] = Array(12).fill(0));
-  fatData.forEach(r => {
-    if (r.date.getFullYear() !== fatYear) return;
-    const mo = r.date.getMonth();
-    const bs = getBrokers(r.brkr);
-    const share = bs.length > 0 ? r.fatturato / bs.length : 0;
-    bs.forEach(b => { if(BRKR_CORE.includes(b)) brkrFatMonthly[b][mo] += share; });
   });
 
   // ─ Commissione media per fixture per broker
@@ -558,44 +495,24 @@ function compute(gfData, fatData) {
     return tot > 0 ? Math.round(brkrMonthlyFix[b][i]/tot*1000)/10 : 0;
   }); });
 
-  // ─ Fatturato cumulativo 2025 per broker
-  const cumFatYear = prevYear;
-  const brkrCumFat = {};
-  BRKR_CORE.forEach(b => { brkrCumFat[b] = Array(12).fill(0); });
-  fatData.forEach(r => {
-    if (r.date.getFullYear() !== cumFatYear) return;
-    const mo = r.date.getMonth();
-    const bs = getBrokers(r.brkr);
-    const share = bs.length > 0 ? r.fatturato / bs.length : 0;
-    bs.forEach(b => { if(BRKR_CORE.includes(b)) brkrCumFat[b][mo] += share; });
-  });
-  // make cumulative
-  BRKR_CORE.forEach(b => {
-    for(let i=1;i<12;i++) brkrCumFat[b][i] += brkrCumFat[b][i-1];
-  });
-
   // ─ Riepilogo tabella per broker
   const brkrSummary = BRKR_CORE.map(b => {
     const fixes = gfData.filter(r => getBrokers(r.brkr).includes(b));
     const totalComm = fixes.reduce((s,r)=>s+r.minComm,0);
-    const fats = fatData.filter(r => getBrokers(r.brkr).includes(b));
-    const totalFat = fats.reduce((s,r)=>s+r.fatturato/getBrokers(r.brkr).length,0);
     const charterers = new Set(fixes.map(r=>r.chrtr).filter(Boolean)).size;
-    return { broker:b, fix:fixes.length, comm:totalComm, avgComm: fixes.length>0?totalComm/fixes.length:0, fat:totalFat, avgFat:fixes.length>0?totalFat/fixes.length:0, charterers };
+    return { broker:b, fix:fixes.length, comm:totalComm, avgComm: fixes.length>0?totalComm/fixes.length:0, charterers };
   }).filter(r=>r.fix>0).sort((a,b)=>b.comm-a.comm);
 
   return {
-    months, monthCount, monthComm, monthInv,
+    months, monthCount, monthComm,
     topChrtr, chrtrFix, topOws,
     brkrCount, topPairs, topOffices,
     brkrFixYTD_cur, brkrFixYTD_prev,
-    brkrFatYTD_cur, brkrFatYTD_prev,
-    brkrByYear, allYears, brkrFatMonthly, fatYear,
-    brkrAvgComm, brkrMonthlyFix, brkrSharePct, brkrCumFat, brkrSummary, cumFatYear,
+    brkrByYear, allYears,
+    brkrAvgComm, brkrMonthlyFix, brkrSharePct, brkrSummary,
     curYear, prevYear,
     totalFix: gfData.length,
     totalComm: gfData.reduce((s,r)=>s+r.minComm,0),
-    totalFat: fatData.reduce((s,r)=>s+r.fatturato,0),
     uniqueChrtr: new Set(gfData.map(r=>r.chrtr)).size,
   };
 }
@@ -612,7 +529,6 @@ function render(d) {
   document.getElementById('kpi-fix').textContent = d.totalFix.toLocaleString('it-IT');
   document.getElementById('kpi-months').textContent = d.months.length + ' mesi di attività';
   document.getElementById('kpi-comm').textContent = fmtM(d.totalComm);
-  document.getElementById('kpi-fat').textContent = fmtM(d.totalFat);
   document.getElementById('kpi-avg').textContent = fmtM(d.totalComm / d.totalFix);
   document.getElementById('kpi-chrtr').textContent = d.uniqueChrtr;
   document.getElementById('last-updated').textContent = '↻ ' + new Date().toLocaleString('it-IT', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
@@ -620,7 +536,6 @@ function render(d) {
   const monthLabels = d.months.map(monthLabel);
   const countArr   = d.months.map(m => d.monthCount[m]);
   const commArr    = d.months.map(m => d.monthComm[m]);
-  const invArr     = d.months.map(m => d.monthInv[m]);
   const maxCount   = Math.max(...countArr);
 
   // 1 Monthly count
@@ -634,12 +549,11 @@ function render(d) {
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
   });
 
-  // 2 Monthly comm vs inv
+  // 2 Monthly comm
   charts.c2 = new Chart(document.getElementById('chartMonthlyComm'), {
     type:'bar',
     data:{ labels: monthLabels, datasets:[
       { label:'Commissione Min.', data:commArr, backgroundColor:'rgba(46,117,182,0.7)', borderRadius:4, borderSkipped:false, order:2 },
-      { label:'Fatturato', data:invArr, backgroundColor:'rgba(112,173,71,0.7)', borderRadius:4, borderSkipped:false, order:2 },
       { label:'Trend Comm.', data:commArr, type:'line', borderColor:'#FFC000', borderWidth:2, pointRadius:3, pointBackgroundColor:'#FFC000', tension:0.4, fill:false, order:1 }
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
@@ -659,16 +573,16 @@ function render(d) {
       scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
   });
 
-  // 4 Top OWS
+  // 4 Top OWS by fixture count
   const owsLabels = d.topOws.map(e=>e[0]);
   const owsVals   = d.topOws.map(e=>e[1]);
   charts.c4 = new Chart(document.getElementById('chartTopOWS'), {
     type:'bar',
-    data:{ labels:owsLabels, datasets:[{ label:'Fatturato ($)', data:owsVals,
+    data:{ labels:owsLabels, datasets:[{ label:'Fixture', data:owsVals,
       backgroundColor:PAL.slice(0,owsLabels.length).map((_,i)=>PAL[(i+2)%PAL.length]), borderRadius:4, borderSkipped:false }] },
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
+      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' fixture'}}},
+      scales:{ x:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}, y:{grid:{color:'transparent'}} } }
   });
 
   // 5 Broker individual donut
@@ -720,18 +634,6 @@ function render(d) {
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
   });
 
-  // 9 Broker Fat YTD
-  charts.c9 = new Chart(document.getElementById('chartBrkrFatYTD'), {
-    type:'bar',
-    data:{ labels:BRKR_CORE, datasets:[
-      { label:'Gen–Mar '+d.curYear,  data:BRKR_CORE.map(b=>d.brkrFatYTD_cur[b]),  backgroundColor:'rgba(112,173,71,0.85)', borderRadius:5, borderSkipped:false },
-      { label:'Gen–Mar '+d.prevYear, data:BRKR_CORE.map(b=>d.brkrFatYTD_prev[b]), backgroundColor:'rgba(237,125,49,0.65)', borderRadius:5, borderSkipped:false },
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
-  });
-
   // 10 Broker Fix by year
   const yColors = ['rgba(155,89,182,0.7)','rgba(46,117,182,0.85)','rgba(255,192,0,0.75)','rgba(112,173,71,0.8)'];
   charts.c10 = new Chart(document.getElementById('chartBrkrFixYear'), {
@@ -745,21 +647,7 @@ function render(d) {
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true} } }
   });
 
-  // 11 Monthly fatturato stacked (prevYear)
-  const monthNames = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-  const brkrColors11 = ['rgba(46,117,182,0.85)','rgba(255,192,0,0.85)','rgba(112,173,71,0.85)','rgba(237,125,49,0.85)','rgba(155,89,182,0.85)','rgba(231,76,60,0.85)'];
-  charts.c11 = new Chart(document.getElementById('chartBrkrFatMonthly'), {
-    type:'bar',
-    data:{ labels:monthNames, datasets: BRKR_CORE.filter(b=>d.brkrFatMonthly[b].some(v=>v>0)).map((b,i)=>({
-      label:b, data:d.brkrFatMonthly[b], backgroundColor:brkrColors11[i], borderSkipped:false
-    }))},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{boxWidth:12}},
-        tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString('it-IT')}}},
-      scales:{ x:{stacked:true,grid:{color:GC}}, y:{stacked:true,grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
-  });
-
-  // ─ Nuovi grafici individuali broker
+  // ─ Grafici individuali broker
   const brkrLineColors = ['#2E75B6','#FFC000','#ED7D31','#70AD47','#9B59B6','#E74C3C'];
   const brkrFill       = ['rgba(46,117,182,0.15)','rgba(255,192,0,0.15)','rgba(237,125,49,0.15)','rgba(112,173,71,0.15)','rgba(155,89,182,0.15)','rgba(231,76,60,0.15)'];
   const activeBrkrs    = BRKR_CORE.filter(b => d.brkrCount[b] > 0);
@@ -807,21 +695,6 @@ function render(d) {
         y:{stacked:true,grid:{color:GC},max:100,ticks:{callback:v=>v+'%'}} } }
   });
 
-  // 15 — Fatturato cumulativo (anno previsto)
-  const monthNamesShort = ['gen','feb','mar','apr','mag','giu','lug','ago','set','ott','nov','dic'];
-  charts.c15 = new Chart(document.getElementById('chartBrkrCumFat'), {
-    type:'line',
-    data:{ labels: monthNamesShort, datasets: activeBrkrs.map((b,i)=>({
-      label:b, data:d.brkrCumFat[b].map(v=>v>0?Math.round(v):null),
-      borderColor:brkrLineColors[i], backgroundColor:brkrFill[i],
-      borderWidth:2.5, pointRadius:3, pointHoverRadius:5, tension:0.3, fill:true
-    }))},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}},
-        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y?.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
-  });
-
   // ─ Tabella riepilogo broker
   const tblBrkr = document.getElementById('tblBrkr');
   tblBrkr.innerHTML = '';
@@ -832,8 +705,6 @@ function render(d) {
       <td class="num">${r.fix}</td>
       <td class="num">${fmtN(r.comm)}</td>
       <td class="num">${fmtN(r.avgComm)}</td>
-      <td class="num">${r.fat>0?fmtN(r.fat):'—'}</td>
-      <td class="num">${r.avgFat>0?fmtN(r.avgFat):'—'}</td>
       <td class="num">${r.charterers}</td>
     </tr>`;
   });
@@ -856,7 +727,6 @@ function render(d) {
       <td><strong>${monthLabel(m)}</strong></td>
       <td class="num">${countArr[i]}</td>
       <td class="num">${fmtN(commArr[i])}</td>
-      <td class="num">${invArr[i]>0?fmtN(invArr[i]):'—'}</td>
       <td class="num">${fmtN(avg)}</td>
       <td style="width:120px;padding-right:18px;"><div class="bar-inline"><div class="bar-inline-fill" style="width:${pct}%"></div></div></td>
     </tr>`;
@@ -886,13 +756,9 @@ async function init() {
 
   try {
     // range=A2:Z → salta la riga titolo "GENOA FIXTURES" e parte dagli header reali
-    const [gfRows, fatRows] = await Promise.all([
-      fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'A2:Z' }),
-      fetchSheetJsonp(SHEET_ID, 'FATTURE')
-    ]);
-    const gfData  = parseGF(gfRows);
-    const fatData = parseFAT(fatRows);
-    const data    = compute(gfData, fatData);
+    const gfRows = await fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'A2:Z' });
+    const gfData = parseGF(gfRows);
+    const data   = compute(gfData);
 
     document.getElementById('loader').classList.add('hidden');
     document.getElementById('main').classList.add('visible');
