@@ -145,19 +145,6 @@
     <div class="kpi orange"><div class="kpi-label">OWS Seguiti</div><div class="kpi-value" id="kpi-ows">—</div><div class="kpi-sub">Armatori che seguiamo</div></div>
   </div>
 
-  <!-- CLIENTI SEGUITI -->
-  <p class="section-title">🤝 Clienti Seguiti</p>
-  <div class="grid-2">
-    <div class="card">
-      <h3>Top CHRTR Seguiti<strong>I 10 charterer che seguiamo — fixture e commissione ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartTopChrtrSeguiti"></canvas></div>
-    </div>
-    <div class="card">
-      <h3>Top OWS Seguiti<strong>I 10 armatori che seguiamo — fixture e commissione ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartTopOwsSeguiti"></canvas></div>
-    </div>
-  </div>
-
   <!-- ANDAMENTO MENSILE -->
   <p class="section-title">📈 Andamento Mensile</p>
   <div class="grid-2">
@@ -168,6 +155,19 @@
     <div class="card">
       <h3>Commissione Mensile<strong>Commissione minima mensile con trend ($)</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartMonthlyComm"></canvas></div>
+    </div>
+  </div>
+
+  <!-- CLIENTI SEGUITI -->
+  <p class="section-title">🤝 Clienti Seguiti</p>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Top CHRTR Seguiti<strong>I 10 charterer che seguiamo — fixture e commissione ($)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartTopChrtrSeguiti"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Top OWS Seguiti<strong>I 10 armatori che seguiamo — fixture e commissione ($)</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartTopOwsSeguiti"></canvas></div>
     </div>
   </div>
 
@@ -269,10 +269,10 @@
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────────
 const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
 
-// ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────────────────────────────
+// ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────
 Chart.defaults.color = '#8fa3bf';
 Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
 Chart.defaults.font.size = 11;
@@ -280,7 +280,7 @@ const GC = 'rgba(36,53,84,0.8)';
 const PAL = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
 const BRKR_CORE = ['MPE','LCE','FGA','OPE','SDP','BEE'];
 
-// ── HELPERS ─────────────────────────────────────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmtM = v => v >= 1e6 ? '$'+Math.round(v/1e6*10)/10+'M' : v >= 1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+Math.round(v);
 const fmtN = v => '$' + Math.round(v).toLocaleString('it-IT');
 const fmtPct = v => (v*100).toFixed(1)+'%';
@@ -418,7 +418,7 @@ function parseGF(rows) {
     .filter(r => r.date !== null && r.minComm > 0);
 }
 
-// ── COMPUTE ───────────────────────────────────────────────────────────────────────────────
+// ── COMPUTE ───────────────────────────────────────────────────────────────────
 function compute(gfData) {
   // ─ Monthly aggregations
   const monthSet = new Set();
@@ -516,7 +516,7 @@ function compute(gfData) {
     owsSeg[r.ows]     = (owsSeg[r.ows]||0) + 1;
     owsSegComm[r.ows] = (owsSegComm[r.ows]||0) + r.minComm;
   });
-  const topOwsSeg = Object.entries(owsSeg).filter(e=>e[0]).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const topOwsSeg = Object.entries(owsSeg).filter(e=>e[0]).sort((a,b)=>(owsSegComm[b[0]]||0)-(owsSegComm[a[0]]||0)).slice(0,10);
 
   // ─ Commissione media per fixture per broker
   const brkrAvgComm = {};
@@ -565,7 +565,7 @@ function compute(gfData) {
   };
 }
 
-// ── RENDER ───────────────────────────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────
 let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
@@ -612,26 +612,26 @@ function render(d) {
     }
   });
 
-  // S3 — Top OWS seguiti: fixture (barre) + commissione (punti asse superiore)
+  // S3 — Top OWS seguiti: commissione (barre) + fixture (punti asse superiore)
   charts.sS3 = new Chart(document.getElementById('chartTopOwsSeguiti'), {
     type:'bar',
     data:{ labels: d.topOwsSeg.map(e=>e[0]), datasets:[
-      { label:'Fixture', data: d.topOwsSeg.map(e=>e[1]),
-        backgroundColor:'#2E75B6cc', borderRadius:4, borderSkipped:false, xAxisID:'xFix', order:2 },
-      { label:'Commissione ($)', type:'line', showLine:false,
-        data: d.topOwsSeg.map(e=>Math.round(d.owsSegComm[e[0]]||0)),
-        borderColor:'#FFC000', backgroundColor:'#FFC000',
+      { label:'Commissione ($)', data: d.topOwsSeg.map(e=>Math.round(d.owsSegComm[e[0]]||0)),
+        backgroundColor:'#FFC000cc', borderRadius:4, borderSkipped:false, xAxisID:'xComm', order:2 },
+      { label:'Fixture', type:'line', showLine:false,
+        data: d.topOwsSeg.map(e=>e[1]),
+        borderColor:'#2E75B6', backgroundColor:'#2E75B6',
         pointRadius:7, pointHoverRadius:9, pointBorderColor:'#162032', pointBorderWidth:1.5,
-        xAxisID:'xComm', order:1 }
+        xAxisID:'xFix', order:1 }
     ]},
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{position:'top',labels:{boxWidth:12,padding:10}},
-        tooltip:{ callbacks:{ label:ctx=>ctx.dataset.label==='Fixture'
-          ?' '+ctx.parsed.x+' fixture'
-          :' $'+ctx.parsed.x.toLocaleString('it-IT') }}},
+        tooltip:{ callbacks:{ label:ctx=>ctx.dataset.label==='Commissione ($)'
+          ?' $'+ctx.parsed.x.toLocaleString('it-IT')
+          :' '+ctx.parsed.x+' fixture' }}},
       scales:{
-        xFix:{ position:'bottom', grid:{color:GC}, beginAtZero:true, ticks:{stepSize:5} },
-        xComm:{ position:'top', grid:{display:false}, beginAtZero:true, ticks:{color:'#FFC000',callback:v=>'$'+Math.round(v/1e3)+'K'} },
+        xComm:{ position:'bottom', grid:{color:GC}, beginAtZero:true, ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'} },
+        xFix:{ position:'top', grid:{display:false}, beginAtZero:true, ticks:{color:'#2E75B6',stepSize:1} },
         y:{ grid:{color:'transparent'} }
       }
     }
@@ -642,131 +642,120 @@ function render(d) {
     type:'bar',
     data:{ labels: monthLabels, datasets:[{ label:'Fixture', data:countArr,
       backgroundColor: countArr.map(v => v===maxCount?'#FFC000':'rgba(46,117,182,0.75)'),
-      borderRadius:5, borderSkipped:false }] },
+      borderRadius:3, borderSkipped:false }]},
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
+      plugins:{ legend:{display:false} },
+      scales:{ x:{grid:{color:GC},ticks:{maxRotation:45}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
   });
 
   // 2 Monthly comm
   charts.c2 = new Chart(document.getElementById('chartMonthlyComm'), {
     type:'bar',
     data:{ labels: monthLabels, datasets:[
-      { label:'Commissione Min.', data:commArr, backgroundColor:'rgba(46,117,182,0.7)', borderRadius:4, borderSkipped:false, order:2 },
-      { label:'Trend Comm.', data:commArr, type:'line', borderColor:'#FFC000', borderWidth:2, pointRadius:3, pointBackgroundColor:'#FFC000', tension:0.4, fill:false, order:1 }
+      { label:'Comm. Min ($)', data:commArr, backgroundColor:'rgba(112,173,71,0.5)', borderRadius:3, borderSkipped:false, order:2 },
+      { label:'Trend', type:'line', data:commArr,
+        borderColor:'#FFC000', backgroundColor:'transparent', borderWidth:2.5,
+        pointRadius:3, pointBackgroundColor:'#FFC000', tension:0.35, order:1 }
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+      plugins:{ legend:{position:'top',labels:{boxWidth:12,padding:8}} },
+      scales:{ x:{grid:{color:GC},ticks:{maxRotation:45}},
+        y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$' y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
   });
 
   // 3 Top charterers
   const chrtrLabels = d.topChrtr.map(e=>e[0]);
-  const chrtrVals   = d.topChrtr.map(e=>e[1]);
+  const chrtrVals   = d.topChrtr.map(e=>Math.round(e[1]));
   charts.c3 = new Chart(document.getElementById('chartTopChrtr'), {
     type:'bar',
     data:{ labels:chrtrLabels, datasets:[{ label:'Min. Comm ($)', data:chrtrVals,
-      backgroundColor:PAL.slice(0,chrtrLabels.length), borderRadius:4, borderSkipped:false }] },
+      backgroundColor:chrtrVals.map((_,i)=>PAL[i%PAL.length]+'cc'), borderRadius:4, borderSkipped:false }]},
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
+      plugins:{ legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}} },
+      scales:{ xComm:{ position:'bottom', grid:{color:GC}, beginAtZero:true, ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'} }, y:{grid:{color:'transparent'}} } }
   });
 
-  // 4 Top OWS by fixture count
-  const owsLabels = d.topOws.map(e=>e[0]);
-  const owsVals   = d.topOws.map(e=>e[1]);
+  // 4 Top OWS
   charts.c4 = new Chart(document.getElementById('chartTopOWS'), {
     type:'bar',
-    data:{ labels:owsLabels, datasets:[{ label:'Fixture', data:owsVals,
-      backgroundColor:PAL.slice(0,owsLabels.length).map((_,i)=>PAL[(i+2)%PAL.length]), borderRadius:4, borderSkipped:false }] },
+    data:{ labels:d.topOws.map(e=>e[0]), datasets:[{ label:'Fixture', data:d.topOws.map(e=>e[1]),
+      backgroundColor:'rgba(112,173,71,0.75)', borderRadius:4, borderSkipped:false }]},
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' fixture'}}},
+      plugins:{ legend:{display:false} },
       scales:{ x:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}, y:{grid:{color:'transparent'}} } }
   });
 
-  // 5 Broker individual donut
-  const brkrSorted = BRKR_CORE.filter(b=>d.brkrCount[b]);
+  // 5 Broker individual
+  const brkrLabels = Object.keys(d.brkrCount).sort((a,b)=>d.brkrCount[b]-d.brkrCount[a]).slice(0,10);
   charts.c5 = new Chart(document.getElementById('chartBrkrIndiv'), {
-    type:'doughnut',
-    data:{ labels:brkrSorted, datasets:[{ data:brkrSorted.map(b=>d.brkrCount[b]),
-      backgroundColor:['#2E75B6','#FFC000','#ED7D31','#70AD47','#9B59B6','#E74C3C'],
-      borderWidth:2, borderColor:'#162032', hoverOffset:8 }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'60%',
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:12}},
-        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed+' fixture'}} } }
+    type:'bar',
+    data:{ labels:brkrLabels, datasets:[{ label:'Fixture', data:brkrLabels.map(b=>d.brkrCount[b]),
+      backgroundColor:brkrLabels.map((_,i)=>PAL[i%PAL.length]+'cc'), borderRadius:4, borderSkipped:false }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}, y:{grid:{color:'transparent'}} } }
   });
 
-  // 6 Broker pairs
-  const pLabels = d.topPairs.map(e=>e[0]);
-  const pVals   = d.topPairs.map(e=>e[1]);
+  // 6 Pairs
   charts.c6 = new Chart(document.getElementById('chartBrkrPairs'), {
     type:'bar',
-    data:{ labels:pLabels, datasets:[{ label:'Fixture condivise', data:pVals,
-      backgroundColor:pVals.map((_,i)=>i===0?'#FFC000':i===1?'#ED7D31':'rgba(46,117,182,0.65)'),
-      borderRadius:6, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture in coppia'}}},
-      scales:{ x:{grid:{color:GC},ticks:{font:{size:10}}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
+    data:{ labels:d.topPairs.map(e=>e[0]), datasets:[{ label:'Fixture', data:d.topPairs.map(e=>e[1]),
+      backgroundColor:'rgba(237,125,49,0.75)', borderRadius:4, borderSkipped:false }]},
+    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ x:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:2}}, y:{grid:{color:'transparent'}} } }
   });
 
-  // 7 Office polar
-  const offLabels = d.topOffices.map(e=>e[0]);
-  const offVals   = d.topOffices.map(e=>e[1]);
-  charts.c7 = new Chart(document.getElementById('chartOffice'), {
+  // 7 YTD comparison
+  const ytdDatasets = BRKR_CORE.map((b,i)=>({
+    label:b, data:[d.brkrFixYTD_cur[b]||0, d.brkrFixYTD_prev[b]||0],
+    backgroundColor:PAL[i]+'cc', borderRadius:4, borderSkipped:false
+  }));
+  charts.c7 = new Chart(document.getElementById('chartBrkrFixYTD'), {
+    type:'bar',
+    data:{ labels:[d.curYear+' (YTD)', d.prevYear+' (stesso periodo)'], datasets:ytdDatasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}} },
+      scales:{ x:{stacked:false,grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:10}} } }
+  });
+
+  // 8 By year
+  const yrDatasets = BRKR_CORE.map((b,i)=>({
+    label:b, data:d.allYears.map(y=>d.brkrByYear[y][b]||0),
+    backgroundColor:PAL[i]+'cc', borderRadius:3, borderSkipped:false
+  }));
+  charts.c8 = new Chart(document.getElementById('chartBrkrFixYear'), {
+    type:'bar',
+    data:{ labels:d.allYears.map(String), datasets:yrDatasets },
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}} },
+      scales:{ x:{stacked:false,grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:20}} } }
+  });
+
+  // 9 Avg comm per broker
+  const avgLabels = BRKR_CORE.filter(b=>d.brkrAvgComm[b]>0);
+  charts.c9 = new Chart(document.getElementById('chartBrkrAvgComm'), {
+    type:'bar',
+    data:{ labels:avgLabels, datasets:[{ label:'Comm. Media ($)', data:avgLabels.map(b=>Math.round(d.brkrAvgComm[b])),
+      backgroundColor:avgLabels.map((_,i)=>PAL[i]+'cc'), borderRadius:4, borderSkipped:false }]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false},
+        tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}} },
+      scales:{ x:{grid:{color:GC}},chartOffice'), {
     type:'polarArea',
     data:{ labels:offLabels, datasets:[{ data:offVals,
       backgroundColor:PAL.map(c=>c+'cc'), borderColor:'#162032', borderWidth:2 }] },
     options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:10}}}},
-      scales:{ r:{grid:{color:GC},ticks:{display:false}} } }
+      plugins:{ legend:{position:'right',labels:{boxWidth:12,padding:8}} } }
   });
 
-  // 8 Broker Fix YTD
-  charts.c8 = new Chart(document.getElementById('chartBrkrFixYTD'), {
-    type:'bar',
-    data:{ labels:BRKR_CORE, datasets:[
-      { label:'Gen–Mar '+d.curYear, data:BRKR_CORE.map(b=>d.brkrFixYTD_cur[b]), backgroundColor:'rgba(46,117,182,0.85)', borderRadius:5, borderSkipped:false },
-      { label:'Gen–Mar '+d.prevYear, data:BRKR_CORE.map(b=>d.brkrFixYTD_prev[b]), backgroundColor:'rgba(255,192,0,0.65)', borderRadius:5, borderSkipped:false },
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}} } }
-  });
-
-  // 10 Broker Fix by year
-  const yColors = ['rgba(155,89,182,0.7)','rgba(46,117,182,0.85)','rgba(255,192,0,0.75)','rgba(112,173,71,0.8)'];
-  charts.c10 = new Chart(document.getElementById('chartBrkrFixYear'), {
-    type:'bar',
-    data:{ labels:BRKR_CORE, datasets: d.allYears.map((y,i)=>({
-      label: String(y), data:BRKR_CORE.map(b=>d.brkrByYear[y][b]||0),
-      backgroundColor:yColors[i]||PAL[i], borderRadius:4, borderSkipped:false
-    }))},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.y+' fixture'}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true} } }
-  });
-
-  // ─ Grafici individuali broker
-  const brkrLineColors = ['#2E75B6','#FFC000','#ED7D31','#70AD47','#9B59B6','#E74C3C'];
-  const brkrFill       = ['rgba(46,117,182,0.15)','rgba(255,192,0,0.15)','rgba(237,125,49,0.15)','rgba(112,173,71,0.15)','rgba(155,89,182,0.15)','rgba(231,76,60,0.15)'];
-  const activeBrkrs    = BRKR_CORE.filter(b => d.brkrCount[b] > 0);
-
-  // 12 — Commissione media per fixture
-  charts.c12 = new Chart(document.getElementById('chartBrkrAvgComm'), {
-    type:'bar',
-    data:{ labels: activeBrkrs, datasets:[{
-      label:'Comm. media/fix ($)',
-      data: activeBrkrs.map(b => Math.round(d.brkrAvgComm[b])),
-      backgroundColor: activeBrkrs.map((_,i) => brkrLineColors[i]+'cc'),
-      borderRadius:6, borderSkipped:false
-    }]},
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
-  });
-
-  // 13 — Trend mensile fixture (multi-line)
+  // 13 — Trend mensile fixture per broker (line)
+  const activeBrkrs = BRKR_CORE.filter(b => d.brkrMonthlyFix[b] && d.brkrMonthlyFix[b].some(v=>v>0));
+  const brkrLineColors = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C'];
+  const brkrFill = brkrLineColors.map(c=>c+'22');
   charts.c13 = new Chart(document.getElementById('chartBrkrTrend'), {
+    type:ElementById('chartBrkrTrend'), {
     type:'line',
     data:{ labels: monthLabels, datasets: activeBrkrs.map((b,i)=>({
       label:b, data:d.brkrMonthlyFix[b],
@@ -832,7 +821,7 @@ function render(d) {
   });
 }
 
-// ── MAIN ───────────────────────────────────────────────────────────────────────────────
+// ── MAIN ──────────────────────────────────────────────────────────────────────
 async function init() {
   // Rilevazione apertura da file locale
   if (location.protocol === 'file:') {
@@ -848,6 +837,33 @@ async function init() {
          style="color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
         https://facoffff.github.io/milionario/
       </a>
+      <p style="color:#8fa3bf;font-size:0.85rem;margin-top:8px;">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
+    </div>`;
+    return;
+  }
+
+  try {
+    // range=A2:Z → salta la riga titolo "GENOA FIXTURES" e parte dagli header reali
+    const gfRows = await fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'A2:Z' });
+    const gfData = parseGF(gfRows);
+    const data   = compute(gfData);
+
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('main').classList.add('visible');
+    render(data);
+  } catch(e) {
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('error-box').classList.add('visible');
+    document.getElementById('error-detail').textContent = e.message;
+    console.error(e);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
+    </a>
       <p style="color:#8fa3bf;font-size:0.85rem;margin-top:8px;">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
     </div>`;
     return;
