@@ -147,28 +147,14 @@
 
   <!-- CLIENTI SEGUITI -->
   <p class="section-title">🤝 Clienti Seguiti</p>
-  <div class="grid-3">
+  <div class="grid-2">
     <div class="card">
-      <h3>Tipo Rapporto<strong>Distribuzione O / C / O+C</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartSideSplit"></canvas></div>
-    </div>
-    <div class="card">
-      <h3>Top CHRTR Seguiti<strong>I 10 charterer che seguiamo per commissione ($)</strong></h3>
+      <h3>Top CHRTR Seguiti<strong>I 10 charterer che seguiamo — fixture e commissione ($)</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartTopChrtrSeguiti"></canvas></div>
     </div>
     <div class="card">
-      <h3>Top OWS Seguiti<strong>I 10 armatori che seguiamo per fixture</strong></h3>
+      <h3>Top OWS Seguiti<strong>I 10 armatori che seguiamo — fixture e commissione ($)</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartTopOwsSeguiti"></canvas></div>
-    </div>
-  </div>
-  <div class="grid-2">
-    <div class="card">
-      <h3>Commissione per Tipo Rapporto<strong>Commissione totale per O / C / O+C ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartCommBySide"></canvas></div>
-    </div>
-    <div class="card">
-      <h3>Fixture per Tipo Rapporto per Mese<strong>Andamento mensile O / C / O+C</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartSideMonthly"></canvas></div>
     </div>
   </div>
 
@@ -283,7 +269,7 @@
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────────────────
+// ── CONFIG ──────────────────────────────────────────────────────────────────────────────
 const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
 
 // ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────────────────────────────
@@ -516,33 +502,21 @@ function compute(gfData) {
   const followedChrtr = new Set(followC.map(r => r.chrtr).filter(Boolean));
   const followedOws   = new Set(followO.map(r => r.ows).filter(Boolean));
 
-  // Top CHRTR seguiti per commissione
-  const chrtrSeg = {};
-  followC.forEach(r => { chrtrSeg[r.chrtr] = (chrtrSeg[r.chrtr]||0) + r.minComm; });
+  // Top CHRTR seguiti: commissione e fixture count
+  const chrtrSeg = {}, chrtrSegFix = {};
+  followC.forEach(r => {
+    chrtrSeg[r.chrtr]    = (chrtrSeg[r.chrtr]||0) + r.minComm;
+    chrtrSegFix[r.chrtr] = (chrtrSegFix[r.chrtr]||0) + 1;
+  });
   const topChrtrSeg = Object.entries(chrtrSeg).filter(e=>e[0]).sort((a,b)=>b[1]-a[1]).slice(0,10);
 
-  // Top OWS seguiti per fixture
-  const owsSeg = {};
-  followO.forEach(r => { owsSeg[r.ows] = (owsSeg[r.ows]||0) + 1; });
+  // Top OWS seguiti: fixture count e commissione
+  const owsSeg = {}, owsSegComm = {};
+  followO.forEach(r => {
+    owsSeg[r.ows]     = (owsSeg[r.ows]||0) + 1;
+    owsSegComm[r.ows] = (owsSegComm[r.ows]||0) + r.minComm;
+  });
   const topOwsSeg = Object.entries(owsSeg).filter(e=>e[0]).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
-  // Breakdown O/C/O+C per fixture e commissione
-  const sideCounts = { O:0, C:0, 'O+C':0, '':0 };
-  const sideComm   = { O:0, C:0, 'O+C':0, '':0 };
-  gfData.forEach(r => {
-    const s = r.side || '';
-    sideCounts[s] = (sideCounts[s]||0) + 1;
-    sideComm[s]   = (sideComm[s]||0) + r.minComm;
-  });
-
-  // Trend mensile per side
-  const sideMonthly = { O:{}, C:{}, 'O+C':{} };
-  months.forEach(m => { sideMonthly.O[m]=0; sideMonthly.C[m]=0; sideMonthly['O+C'][m]=0; });
-  gfData.forEach(r => {
-    const m = monthKey(r.date);
-    if (r.side && sideMonthly[r.side] && sideMonthly[r.side][m] !== undefined)
-      sideMonthly[r.side][m]++;
-  });
 
   // ─ Commissione media per fixture per broker
   const brkrAvgComm = {};
@@ -583,7 +557,7 @@ function compute(gfData) {
     brkrByYear, allYears,
     brkrAvgComm, brkrMonthlyFix, brkrSharePct, brkrSummary,
     followedChrtr, followedOws,
-    topChrtrSeg, topOwsSeg, sideCounts, sideComm, sideMonthly,
+    topChrtrSeg, chrtrSegFix, topOwsSeg, owsSegComm,
     curYear, prevYear,
     totalFix: gfData.length,
     totalComm: gfData.reduce((s,r)=>s+r.minComm,0),
@@ -613,67 +587,54 @@ function render(d) {
   const commArr    = d.months.map(m => d.monthComm[m]);
   const maxCount   = Math.max(...countArr);
 
-  // S1 — Tipo rapporto (O/C/O+C) donut
-  const sideKeys = ['O','C','O+C'];
-  const sideColors = ['#2E75B6','#FFC000','#70AD47'];
-  charts.sS1 = new Chart(document.getElementById('chartSideSplit'), {
-    type:'doughnut',
-    data:{ labels:['Solo Owner (O)','Solo Charterer (C)','Owner+Charterer (O+C)'],
-      datasets:[{ data: sideKeys.map(s=>d.sideCounts[s]||0),
-        backgroundColor:sideColors, borderWidth:2, borderColor:'#162032', hoverOffset:8 }] },
-    options:{ responsive:true, maintainAspectRatio:false, cutout:'55%',
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:12}},
-        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+ctx.parsed+' fixture'}} } }
-  });
-
-  // S2 — Top CHRTR seguiti per commissione
+  // S2 — Top CHRTR seguiti: commissione (barre) + fixture (punti asse superiore)
   charts.sS2 = new Chart(document.getElementById('chartTopChrtrSeguiti'), {
     type:'bar',
-    data:{ labels: d.topChrtrSeg.map(e=>e[0]), datasets:[{
-      label:'Min. Comm ($)', data: d.topChrtrSeg.map(e=>e[1]),
-      backgroundColor:'#FFC000cc', borderRadius:4, borderSkipped:false }] },
+    data:{ labels: d.topChrtrSeg.map(e=>e[0]), datasets:[
+      { label:'Commissione ($)', data: d.topChrtrSeg.map(e=>Math.round(e[1])),
+        backgroundColor:'#FFC000cc', borderRadius:4, borderSkipped:false, xAxisID:'xComm', order:2 },
+      { label:'Fixture', type:'line', showLine:false,
+        data: d.topChrtrSeg.map(e=>d.chrtrSegFix[e[0]]||0),
+        borderColor:'#70AD47', backgroundColor:'#70AD47',
+        pointRadius:7, pointHoverRadius:9, pointBorderColor:'#162032', pointBorderWidth:1.5,
+        xAxisID:'xFix', order:1 }
+    ]},
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
+      plugins:{ legend:{position:'top',labels:{boxWidth:12,padding:10}},
+        tooltip:{ callbacks:{ label:ctx=>ctx.dataset.label==='Commissione ($)'
+          ?' $'+ctx.parsed.x.toLocaleString('it-IT')
+          :' '+ctx.parsed.x+' fixture' }}},
+      scales:{
+        xComm:{ position:'bottom', grid:{color:GC}, beginAtZero:true, ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'} },
+        xFix:{ position:'top', grid:{display:false}, beginAtZero:true, ticks:{color:'#70AD47',stepSize:1} },
+        y:{ grid:{color:'transparent'} }
+      }
+    }
   });
 
-  // S3 — Top OWS seguiti per fixture
+  // S3 — Top OWS seguiti: fixture (barre) + commissione (punti asse superiore)
   charts.sS3 = new Chart(document.getElementById('chartTopOwsSeguiti'), {
     type:'bar',
-    data:{ labels: d.topOwsSeg.map(e=>e[0]), datasets:[{
-      label:'Fixture', data: d.topOwsSeg.map(e=>e[1]),
-      backgroundColor:'#2E75B6cc', borderRadius:4, borderSkipped:false }] },
+    data:{ labels: d.topOwsSeg.map(e=>e[0]), datasets:[
+      { label:'Fixture', data: d.topOwsSeg.map(e=>e[1]),
+        backgroundColor:'#2E75B6cc', borderRadius:4, borderSkipped:false, xAxisID:'xFix', order:2 },
+      { label:'Commissione ($)', type:'line', showLine:false,
+        data: d.topOwsSeg.map(e=>Math.round(d.owsSegComm[e[0]]||0)),
+        borderColor:'#FFC000', backgroundColor:'#FFC000',
+        pointRadius:7, pointHoverRadius:9, pointBorderColor:'#162032', pointBorderWidth:1.5,
+        xAxisID:'xComm', order:1 }
+    ]},
     options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' fixture'}}},
-      scales:{ x:{grid:{color:GC},beginAtZero:true}, y:{grid:{color:'transparent'}} } }
-  });
-
-  // S4 — Commissione per tipo rapporto (bar)
-  charts.sS4 = new Chart(document.getElementById('chartCommBySide'), {
-    type:'bar',
-    data:{ labels:['Solo Owner (O)','Solo Charterer (C)','Owner+Charterer (O+C)'],
-      datasets:[{ label:'Commissione ($)', data: sideKeys.map(s=>Math.round(d.sideComm[s]||0)),
-        backgroundColor:sideColors.map(c=>c+'cc'), borderRadius:6, borderSkipped:false }] },
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},beginAtZero:true,ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
-  });
-
-  // S5 — Trend mensile per tipo rapporto
-  const sideLineColors = ['#2E75B6','#FFC000','#70AD47'];
-  const sideFill = ['rgba(46,117,182,0.12)','rgba(255,192,0,0.12)','rgba(112,173,71,0.12)'];
-  charts.sS5 = new Chart(document.getElementById('chartSideMonthly'), {
-    type:'line',
-    data:{ labels: monthLabels, datasets: sideKeys.map((s,i)=>({
-      label: s==='O'?'Solo Owner':s==='C'?'Solo Charterer':'Owner+Charterer',
-      data: d.months.map(m => d.sideMonthly[s][m]||0),
-      borderColor:sideLineColors[i], backgroundColor:sideFill[i],
-      borderWidth:2, pointRadius:3, tension:0.35, fill:true
-    }))},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{position:'bottom',labels:{boxWidth:12,padding:10}},
-        tooltip:{mode:'index',intersect:false,callbacks:{label:ctx=>' '+ctx.dataset.label+': '+ctx.parsed.y+' fix'}}},
-      scales:{ x:{grid:{color:GC},ticks:{maxRotation:45}}, y:{grid:{color:GC},beginAtZero:true} } }
+      plugins:{ legend:{position:'top',labels:{boxWidth:12,padding:10}},
+        tooltip:{ callbacks:{ label:ctx=>ctx.dataset.label==='Fixture'
+          ?' '+ctx.parsed.x+' fixture'
+          :' $'+ctx.parsed.x.toLocaleString('it-IT') }}},
+      scales:{
+        xFix:{ position:'bottom', grid:{color:GC}, beginAtZero:true, ticks:{stepSize:5} },
+        xComm:{ position:'top', grid:{display:false}, beginAtZero:true, ticks:{color:'#FFC000',callback:v=>'$'+Math.round(v/1e3)+'K'} },
+        y:{ grid:{color:'transparent'} }
+      }
+    }
   });
 
   // 1 Monthly count
@@ -871,7 +832,7 @@ function render(d) {
   });
 }
 
-// ── MAIN ──────────────────────────────────────────────────────────────────────────────
+// ── MAIN ───────────────────────────────────────────────────────────────────────────────
 async function init() {
   // Rilevazione apertura da file locale
   if (location.protocol === 'file:') {
@@ -883,11 +844,11 @@ async function init() {
     const eb = document.getElementById('error-box');
     eb.innerHTML += `<div style="margin-top:16px;padding:16px;background:#0a2a0a;border:1px solid #70AD47;border-radius:8px;text-align:center;">
       <p style="color:#70AD47;font-weight:700;font-size:1.1rem;margin-bottom:8px;">✅ Apri il link web invece:</p>
-      <a href="https://facoffff.github.io/milionario/\" target=\"_blank\"
-         style=\"color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;\">
+      <a href="https://facoffff.github.io/milionario/" target="_blank"
+         style="color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
         https://facoffff.github.io/milionario/
       </a>
-      <p style=\"color:#8fa3bf;font-size:0.85rem;margin-top:8px;\">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
+      <p style="color:#8fa3bf;font-size:0.85rem;margin-top:8px;">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
     </div>`;
     return;
   }
