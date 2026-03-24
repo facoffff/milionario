@@ -28,10 +28,6 @@
   #error-box code{background:#1a0505;padding:2px 6px;border-radius:4px;font-size:0.85rem;}
   #error-box.visible{display:block;}
 
-  /* HEADER */
-  header{background:#ffffff;padding:14px 40px;border-bottom:3px solid var(--gold);display:flex;justify-content:center;align-items:center;}
-  .header-logo{height:58px;width:auto;display:block;}
-
   /* LAYOUT */
   .container{max-width:1400px;margin:0 auto;padding:28px 24px;}
   #main{display:none;}
@@ -117,10 +113,6 @@
   <button onclick="location.reload()" style="margin-top:14px;background:#c00;color:#fff;border:none;padding:8px 18px;border-radius:8px;cursor:pointer;font-size:0.88rem;">↻ Riprova</button>
   <p style="margin-top:12px;font-size:0.78rem;color:#888;">Errore tecnico: <code id="error-detail"></code></p>
 </div>
-
-<header>
-  <img class="header-logo" src="https://static.wixstatic.com/media/f0ffb4_55fcba0501c646dcb0078da566bb067f~mv2.png/v1/fill/w_600,h_152,al_c,q_95,usm_0.66_1.00_0.01,enc_png/LS-22.png" alt="Lightship Chartering"/>
-</header>
 
 <div class="container">
 <div id="main">
@@ -569,7 +561,7 @@ function render(d) {
   document.getElementById('kpi-avg').textContent = fmtM(d.totalComm / d.totalFix);
   document.getElementById('kpi-chrtr').textContent = d.followedChrtr.size || d.uniqueChrtr;
   document.getElementById('kpi-ows').textContent = d.followedOws.size;
-  document.getElementById('last-updated').textContent = '↻ ' + new Date().toLocaleString('it-IT', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+  const _lu = document.getElementById('last-updated'); if (_lu) _lu.textContent = '↻ ' + new Date().toLocaleString('it-IT', {day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
 
   const monthLabels = d.months.map(monthLabel);
   const countArr   = d.months.map(m => d.monthCount[m]);
