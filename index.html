@@ -152,19 +152,6 @@
     </div>
   </div>
 
-  <!-- CHARTERER & OWS -->
-  <p class="section-title">🚢 Charterer &amp; Armatori</p>
-  <div class="grid-2">
-    <div class="card">
-      <h3>Top Charterer<strong>I 10 charterer con più commissioni generate ($)</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartTopChrtr"></canvas></div>
-    </div>
-    <div class="card">
-      <h3>Top Armatori (OWS)<strong>I 10 owner per numero di fixture</strong></h3>
-      <div class="chart-wrap tall"><canvas id="chartTopOWS"></canvas></div>
-    </div>
-  </div>
-
   <!-- BROKER -->
   <p class="section-title">👥 Analisi Broker</p>
   <div class="grid-3">
@@ -446,7 +433,7 @@ function compute(gfData) {
   // ─ Office distribution
   const offCount = {};
   gfData.forEach(r => { if(r.office) offCount[r.office]=(offCount[r.office]||0)+1; });
-  const topOffices = Object.entries(offCount).sort((a,b)=>b[1]-a[1]);
+  const topOffices = Object.entries(offCount).filter(e=>e[0].toUpperCase()!=='GOA').sort((a,b)=>b[1]-a[1]);
 
   // ─ Broker YTD (Jan-Mar current year vs previous year)
   const curYear = new Date().getFullYear();
@@ -639,30 +626,6 @@ function render(d) {
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
-  });
-
-  // 3 Top charterers
-  const chrtrLabels = d.topChrtr.map(e=>e[0]);
-  const chrtrVals   = d.topChrtr.map(e=>e[1]);
-  charts.c3 = new Chart(document.getElementById('chartTopChrtr'), {
-    type:'bar',
-    data:{ labels:chrtrLabels, datasets:[{ label:'Min. Comm ($)', data:chrtrVals,
-      backgroundColor:PAL.slice(0,chrtrLabels.length), borderRadius:4, borderSkipped:false }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.x.toLocaleString('it-IT')}}},
-      scales:{ x:{grid:{color:GC},ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'}}, y:{grid:{color:'transparent'}} } }
-  });
-
-  // 4 Top OWS by fixture count
-  const owsLabels = d.topOws.map(e=>e[0]);
-  const owsVals   = d.topOws.map(e=>e[1]);
-  charts.c4 = new Chart(document.getElementById('chartTopOWS'), {
-    type:'bar',
-    data:{ labels:owsLabels, datasets:[{ label:'Fixture', data:owsVals,
-      backgroundColor:PAL.slice(0,owsLabels.length).map((_,i)=>PAL[(i+2)%PAL.length]), borderRadius:4, borderSkipped:false }] },
-    options:{ indexAxis:'y', responsive:true, maintainAspectRatio:false,
-      plugins:{ legend:{display:false}, tooltip:{callbacks:{label:ctx=>' '+ctx.parsed.x+' fixture'}}},
-      scales:{ x:{grid:{color:GC},beginAtZero:true,ticks:{stepSize:5}}, y:{grid:{color:'transparent'}} } }
   });
 
   // 5 Broker individual donut
