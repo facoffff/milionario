@@ -376,13 +376,18 @@ function parseMarketData(rows) {
     if (!c0 || !c1) continue;
     const media = parseFloat(c1.replace(',', '.'));
     if (isNaN(media)) continue;
-    // Gestisci formato gviz: Date(yyyy, m0, d) oppure YYYY-MM
+    // Gestisci formato: Date(yyyy, m0, d) | dd/mm/yyyy (Italian) | YYYY-MM
     let key = null;
     const dm = c0.match(/^Date\((\d+),(\d+),\d+\)$/);
     if (dm) {
       key = `${dm[1]}-${String(parseInt(dm[2])+1).padStart(2,'0')}`;
-    } else if (c0.match(/^\d{4}-\d{2}$/)) {
-      key = c0;
+    } else {
+      const it = c0.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+      if (it) {
+        key = `${it[3]}-${String(parseInt(it[2])).padStart(2,'0')}`;
+      } else if (c0.match(/^\d{4}-\d{2}$/)) {
+        key = c0;
+      }
     }
     if (key) map[key] = media;
   }
