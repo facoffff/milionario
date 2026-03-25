@@ -620,7 +620,7 @@ function render(d) {
   charts.c2 = new Chart(document.getElementById('chartMonthlyComm'), {
     type:'bar',
     data:{ labels: monthLabels, datasets:[
-      { label:'Commissione Min.', data:commArr, backgroundColor:'rgba(46,117,182,0.7)', borderRadius:4, borderSkipped:false, order:2 },
+      { label:'Commissione Min.', data:commArr, backgroundColor:commArr.map(v=>v===Math.max(...commArr)?'#FFC000':'rgba(46,117,182,0.7)'), borderRadius:4, borderSkipped:false, order:2 },
       { label:'Trend Comm.', data:commArr, type:'line', borderColor:'#FFC000', borderWidth:2, pointRadius:3, pointBackgroundColor:'#FFC000', tension:0.4, fill:false, order:1 }
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
