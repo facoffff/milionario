@@ -139,6 +139,14 @@
     </div>
   </div>
 
+  <!-- PERFORMANCE VS MERCATO -->
+  <div class="grid-1" style="margin-top:20px;">
+    <div class="card">
+      <h3>Performance vs Mercato<strong>Commissione mensile rapportata al valore del mercato — mesi sopra la media in giallo</strong></h3>
+      <div class="chart-wrap tall"><canvas id="chartPerfMkt"></canvas></div>
+    </div>
+  </div>
+
   <!-- CLIENTI SEGUITI -->
   <p class="section-title">🤝 Clienti Seguiti</p>
   <div class="grid-2">
@@ -352,6 +360,25 @@ function fetchSheetJsonp(sheetId, sheetName, opts) {
   });
 }
 
+function parseMarketData(rows) {
+  // Trova la riga header "Mese" / "Media" e legge i dati sottostanti
+  const map = {};
+  let headerFound = false;
+  for (const row of rows) {
+    if (!row || row.length < 2) continue;
+    const c0 = (row[0] || '').trim();
+    const c1 = (row[1] || '').trim();
+    if (!headerFound) {
+      if (c0.toLowerCase() === 'mese' && c1.toLowerCase() === 'media') { headerFound = true; }
+      continue;
+    }
+    if (!c0 || !c1) continue;
+    const media = parseFloat(c1.replace(',', '.'));
+    if (c0.match(/^\d{4}-\d{2}$/) && !isNaN(media)) map[c0] = media;
+  }
+  return map;
+}
+
 function parseGF(rows) {
   // rows[0] = headers (title row already skipped via range=A2:Z)
   const headers = rows[0].map(h => h ? h.trim() : '');
@@ -538,7 +565,7 @@ let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
 
-function render(d) {
+function render(d, marketMap) {
   destroyCharts();
 
   // KPIs
@@ -626,6 +653,42 @@ function render(d) {
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{ legend:{labels:{boxWidth:12}}, tooltip:{callbacks:{label:ctx=>' $'+ctx.parsed.y.toLocaleString('it-IT')}}},
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
+  });
+
+  // cMkt — Performance vs Mercato
+  const mktArr  = d.months.map(m => (marketMap && marketMap[m]) ? marketMap[m] : null);
+  const perfRaw = d.months.map((m,i) => mktArr[i] ? Math.round(commArr[i] / mktArr[i]) : null);
+  const perfValid = perfRaw.filter(v => v !== null);
+  const perfAvg  = perfValid.length ? perfValid.reduce((a,b)=>a+b,0)/perfValid.length : 0;
+  charts.cMkt = new Chart(document.getElementById('chartPerfMkt'), {
+    type:'bar',
+    data:{ labels: monthLabels, datasets:[
+      { label:'Comm. / Mercato (indice)', data: perfRaw,
+        backgroundColor: perfRaw.map(v => v===null ? 'transparent' : v>=perfAvg ? '#FFC000' : 'rgba(46,117,182,0.7)'),
+        borderRadius:5, borderSkipped:false, order:2, yAxisID:'yPerf' },
+      { label:'Media Mercato', data: mktArr, type:'line',
+        borderColor:'#70AD47', backgroundColor:'rgba(112,173,71,0.12)',
+        borderWidth:2, pointRadius:3, pointBackgroundColor:'#70AD47', tension:0.4, fill:false,
+        order:1, yAxisID:'yMkt' }
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{labels:{boxWidth:12}},
+        tooltip:{ callbacks:{ label:ctx => {
+          if(ctx.dataset.label==='Media Mercato') return ' Mercato: '+Number(ctx.parsed.y).toLocaleString('it-IT');
+          return ' Indice: $'+Number(ctx.parsed.y).toLocaleString('it-IT')+' / pt mercato';
+        }}}
+      },
+      scales:{
+        x:{ grid:{color:GC} },
+        yPerf:{ position:'left', grid:{color:GC}, beginAtZero:true,
+          title:{display:true, text:'$ per punto mercato', color:'#8fa3bf', font:{size:10}},
+          ticks:{callback:v=>'$'+Math.round(v).toLocaleString('it-IT')} },
+        yMkt:{ position:'right', grid:{display:false},
+          title:{display:true, text:'Media Mercato', color:'#70AD47', font:{size:10}},
+          ticks:{color:'#70AD47'} }
+      }
+    }
   });
 
   // 5 Broker individual donut
@@ -799,13 +862,17 @@ async function init() {
 
   try {
     // range=A2:Z → salta la riga titolo "GENOA FIXTURES" e parte dagli header reali
-    const gfRows = await fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'A2:Z' });
-    const gfData = parseGF(gfRows);
-    const data   = compute(gfData);
+    const [gfRows, mktRows] = await Promise.all([
+      fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'A2:Z' }),
+      fetchSheetJsonp(SHEET_ID, 'GENOA FIXTURES', { range: 'T:U' }).catch(()=>[])
+    ]);
+    const gfData    = parseGF(gfRows);
+    const marketMap = parseMarketData(mktRows);
+    const data      = compute(gfData);
 
     document.getElementById('loader').classList.add('hidden');
     document.getElementById('main').classList.add('visible');
-    render(data);
+    render(data, marketMap);
   } catch(e) {
     document.getElementById('loader').classList.add('hidden');
     document.getElementById('error-box').classList.add('visible');
