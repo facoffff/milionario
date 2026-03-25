@@ -362,6 +362,7 @@ function fetchSheetJsonp(sheetId, sheetName, opts) {
 
 function parseMarketData(rows) {
   // Trova la riga header "Mese" / "Media" e legge i dati sottostanti
+  // gviz può restituire date come Date(y,m_0indexed,d) oppure come stringa YYYY-MM
   const map = {};
   let headerFound = false;
   for (const row of rows) {
@@ -374,7 +375,16 @@ function parseMarketData(rows) {
     }
     if (!c0 || !c1) continue;
     const media = parseFloat(c1.replace(',', '.'));
-    if (c0.match(/^\d{4}-\d{2}$/) && !isNaN(media)) map[c0] = media;
+    if (isNaN(media)) continue;
+    // Gestisci formato gviz: Date(yyyy, m0, d) oppure YYYY-MM
+    let key = null;
+    const dm = c0.match(/^Date\((\d+),(\d+),\d+\)$/);
+    if (dm) {
+      key = `${dm[1]}-${String(parseInt(dm[2])+1).padStart(2,'0')}`;
+    } else if (c0.match(/^\d{4}-\d{2}$/)) {
+      key = c0;
+    }
+    if (key) map[key] = media;
   }
   return map;
 }
