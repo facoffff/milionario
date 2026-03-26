@@ -316,10 +316,10 @@
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
-// ── CONFIG ──────────────────────────────────────────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
 
-// ── CHART GLOBAL DEFAULTS ───────────────────────────────────────────────────────────────────────
+// ── CHART GLOBAL DEFAULTS ──────────────────────────────────────────────────────────────────────────────────────────────
 Chart.defaults.color = '#8fa3bf';
 Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
 Chart.defaults.font.size = 11;
@@ -327,7 +327,7 @@ let GC = 'rgba(36,53,84,0.8)';
 const PAL = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
 const BRKR_CORE = ['MPE','LCE','FGA','OPE','SDP','BEE'];
 
-// ── HELPERS ─────────────────────────────────────────────────────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 const fmtM = v => v >= 1e6 ? '$'+Math.round(v/1e6*10)/10+'M' : v >= 1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+Math.round(v);
 const fmtN = v => '$' + Math.round(v).toLocaleString('it-IT');
 const fmtPct = v => (v*100).toFixed(1)+'%';
@@ -366,7 +366,7 @@ function getBrokers(s) {
 
 function normPair(a, b) { return [a,b].sort().join(' + '); }
 
-// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ──────────────────
+// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ──────────────────────────────
 function fetchSheetJsonp(sheetId, sheetName, opts) {
   opts = opts || {};
   return new Promise((resolve, reject) => {
@@ -499,7 +499,7 @@ function parseGF(rows) {
     .filter(r => r.date !== null && r.minComm > 0);
 }
 
-// ── COMPUTE ─────────────────────────────────────────────────────────────────────────────────────
+// ── COMPUTE ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 function compute(gfData) {
   // ─ Monthly aggregations
   const monthSet = new Set();
@@ -646,7 +646,7 @@ function compute(gfData) {
   };
 }
 
-// ── RENDER ──────────────────────────────────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
@@ -754,7 +754,8 @@ function render(d, marketMap) {
         backgroundColor: perfRaw.map(v => v===null ? 'rgba(46,117,182,0.7)' : v>=perfAvg ? '#FFC000' : 'rgba(46,117,182,0.7)'),
         borderRadius:5, borderSkipped:false, order:2, yAxisID:'yPerf' },
       { label:'Media Mercato', data: mktArr, type:'line',
-        borderColor:'#70AD47', backgroundColor:'rgba(112,173,71,0.12)',        borderWidth:2, pointRadius:3, pointBackgroundColor:'#70AD47', tension:0.4, fill:false,
+        borderColor:'#70AD47', backgroundColor:'rgba(112,173,71,0.12)',
+        borderWidth:2, pointRadius:3, pointBackgroundColor:'#70AD47', tension:0.4, fill:false,
         order:1, yAxisID:'yMkt' }
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
@@ -925,13 +926,13 @@ function render(d, marketMap) {
   });
 }
 
-// ── SIDEBAR ──────────────────────────────────────────────────────────────────────────────────────
+// ── SIDEBAR ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 const BRKR_COLORS = {MPE:'#2E75B6',LCE:'#FFC000',FGA:'#ED7D31',OPE:'#70AD47',SDP:'#9B59B6',BEE:'#E74C3C'};
 
 function toggleSidebar() {
   const sb = document.getElementById('broker-sidebar');
   const tog = document.getElementById('sidebar-toggle');
-  const open = sb.classList.toggle('open);
+  const open = sb.classList.toggle('open');
   tog.style.left = open ? '240px' : '0';
   tog.textContent = open ? '✕' : '☰';
 }
@@ -971,7 +972,7 @@ function openBrokerModal(broker, gfData) {
       <td>${r.chrtr||'—'}</td><td>${r.ows||'—'}</td>
       <td><span class="badge ${side==='C'?'badge-blue':side==='O'?'badge-green':'badge-gold'}">${side}</span></td>
       <td style="font-size:0.78rem;color:var(--muted)">${r.office||'—'}</td>
-      <td class="num">${r.minComm?fmtN(r.minComm):'—'}</td>
+      <td class="num">${r.minComm?fmtN(r.minComm):' —'}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -983,7 +984,7 @@ function closeBrokerModal() {
   document.getElementById('broker-modal').classList.remove('open');
 }
 
-// ── HIDE / RESTORE CARDS ────────────────────────────────────────────────────────────────────────
+// ── HIDE / RESTORE CARDS ───────────────────────────────────────────────────────────────────────────────────────────────
 const _hiddenCards = {};
 
 function initCardHideButtons() {
@@ -1036,7 +1037,7 @@ function updateHiddenPanel() {
   ).join('');
 }
 
-// ── THEME TOGGLE ────────────────────────────────────────────────────────────────────────────────
+// ── THEME TOGGLE ──────────────────────────────────────────────────────────────────────────────────────────────────────
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light');
   const btn = document.getElementById('theme-btn');
@@ -1057,7 +1058,7 @@ function toggleTheme() {
   } catch(e){}
 })();
 
-// ── MAIN ────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── MAIN ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
 async function init() {
   // Rilevazione apertura da file locale
   if (location.protocol === 'file:') {
@@ -1070,7 +1071,7 @@ async function init() {
     eb.innerHTML += `<div style="margin-top:16px;padding:16px;background:#0a2a0a;border:1px solid #70AD47;border-radius:8px;text-align:center;">
       <p style="color:#70AD47;font-weight:700;font-size:1.1rem;margin-bottom:8px;">✅ Apri il link web invece:</p>
       <a href="https://facoffff.github.io/milionario/" target="_blank"
-         style="color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
+         style=""color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
         https://facoffff.github.io/milionario/
       </a>
       <p style="color:#8fa3bf;font-size:0.85rem;margin-top:8px;">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
