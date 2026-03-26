@@ -614,6 +614,57 @@ function compute(gfData) {
   });
 
   // ─ Trend mensile fixture per broker
+  const brkrMonthlyFix =  r.date.getMonth();
+    if (mo > curMonth) return;
+    getBrokers(r.brkr).forEach(b => {
+      if (!BRKR_CORE.includes(b)) return;
+      if (y === curYear)  brkrFixYTD_cur[b]++;
+      if (y === prevYear) brkrFixYTD_prev[b]++;
+    });
+  });
+
+  // ─ Broker by year
+  const allYears = [...new Set(gfData.map(r=>r.date.getFullYear()))].sort();
+  const brkrByYear = {};
+  allYears.forEach(y => {
+    brkrByYear[y] = {};
+    BRKR_CORE.forEach(b => brkrByYear[y][b] = 0);
+  });
+  gfData.forEach(r => {
+    const y = r.date.getFullYear();
+    getBrokers(r.brkr).forEach(b => { if(BRKR_CORE.includes(b)) brkrByYear[y][b]++; });
+  });
+
+  // ─ Clienti seguiti (colonna S)
+  const followC = gfData.filter(r => r.side === 'C' || r.side === 'O+C');
+  const followO = gfData.filter(r => r.side === 'O' || r.side === 'O+C');
+  const followedChrtr = new Set(followC.map(r => r.chrtr).filter(Boolean));
+  const followedOws   = new Set(followO.map(r => r.ows).filter(Boolean));
+
+  // Top CHRTR seguiti: commissione e fixture count
+  const chrtrSeg = {}, chrtrSegFix = {};
+  followC.forEach(r => {
+    chrtrSeg[r.chrtr]    = (chrtrSeg[r.chrtr]||0) + r.minComm;
+    chrtrSegFix[r.chrtr] = (chrtrSegFix[r.chrtr]||0) + 1;
+  });
+  const topChrtrSeg = Object.entries(chrtrSeg).filter(e=>e[0]).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  // Top OWS seguiti: fixture count e commissione
+  const owsSeg = {}, owsSegComm = {};
+  followO.forEach(r => {
+    owsSeg[r.ows]     = (owsSeg[r.ows]||0) + 1;
+    owsSegComm[r.ows] = (owsSegComm[r.ows]||0) + r.minComm;
+  });
+  const topOwsSeg = Object.entries(owsSeg).filter(e=>e[0]).sort((a,b)=>(owsSegComm[b[0]]||0)-(owsSegComm[a[0]]||0)).slice(0,10);
+
+  // ─ Commissione media per fixture per broker
+  const brkrAvgComm = {};
+  BRKR_CORE.forEach(b => {
+    const fixes = gfData.filter(r => getBrokers(r.brkr).includes(b));
+    brkrAvgComm[b] = fixes.length > 0 ? fixes.reduce((s,r)=>s+r.minComm,0) / fixes.length : 0;
+  });
+
+  // ─ Trend mensile fixture per broker
   const brkrMonthlyFix = {};
   BRKR_CORE.forEach(b => { brkrMonthlyFix[b] = months.map(()=>0); });
   gfData.forEach(r => {
@@ -958,7 +1009,7 @@ function initSidebar(data, gfData) {
 }
 
 // ── BROKER MODAL SORT STATE ───────────────────────────────────────────────────
-let _bmBroker = null, _bmFixes = [], _bmSortKey = 'date', _bmSortDir = -1;
+let _bmBroker = null, _bmFixes = [], _bmSortKey = 'date', _bmSortDir = -1, _bmFilter = '';
 
 function openBrokerModal(broker, gfData) {
   const src = gfData || window._gfData || [];
@@ -966,6 +1017,7 @@ function openBrokerModal(broker, gfData) {
   _bmFixes = src.filter(r => getBrokers(r.brkr).includes(broker));
   _bmSortKey = 'date';
   _bmSortDir = -1;
+  _bmFilter = '';
   _renderBrokerModal();
   document.getElementById('broker-modal').classList.add('open');
 }
@@ -974,6 +1026,14 @@ function sortBrokerTable(key) {
   if (_bmSortKey === key) { _bmSortDir *= -1; }
   else { _bmSortKey = key; _bmSortDir = -1; }
   _renderBrokerModal();
+}
+
+function filterBrokerTable(val) {
+  _bmFilter = val.trim().toLowerCase();
+  _renderBrokerModal();
+  // Restore focus and cursor after re-render
+  const si = document.getElementById('bm-search');
+  if (si) { si.value = val; si.focus(); si.setSelectionRange(val.length, val.length); }
 }
 
 function _renderBrokerModal() {
@@ -991,9 +1051,18 @@ function _renderBrokerModal() {
     if (typeof va === 'string') return _bmSortDir * va.localeCompare(vb);
     return _bmSortDir * (va - vb);
   });
+  // Apply search filter
+  const filtered = _bmFilter
+    ? sorted.filter(r =>
+        (r.vsl||'').toLowerCase().includes(_bmFilter) ||
+        (r.chrtr||'').toLowerCase().includes(_bmFilter) ||
+        (r.ows||'').toLowerCase().includes(_bmFilter))
+    : sorted;
   const totalComm = _bmFixes.reduce((s,r)=>s+r.minComm,0);
+  const filteredComm = filtered.reduce((s,r)=>s+r.minComm,0);
+  const countLabel = _bmFilter ? `${filtered.length}/${_bmFixes.length}` : `${_bmFixes.length}`;
   document.getElementById('bm-title').innerHTML =
-    `<span style="color:${BRKR_COLORS[broker]||'#2E75B6'}">${broker}</span>&nbsp; <span style="font-weight:400;color:var(--muted);font-size:0.9rem;">${_bmFixes.length} contratti · ${fmtM(totalComm)} totale</span>`;
+    `<span style="color:${BRKR_COLORS[broker]||'#2E75B6'}">${broker}</span>&nbsp; <span style="font-weight:400;color:var(--muted);font-size:0.9rem;">${countLabel} contratti · ${fmtM(totalComm)} totale</span>`;
   const cols = [
     {key:'date',   label:'Data',      cls:''},
     {key:'vsl',    label:'Vessel',    cls:''},
@@ -1003,10 +1072,18 @@ function _renderBrokerModal() {
     {key:'office', label:'Office',    cls:''},
     {key:'comm',   label:'Comm. Min.',cls:'num'},
   ];
-  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;">
-    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Fixture Totali</div><div style="font-size:1.6rem;font-weight:800;color:#fff">${_bmFixes.length}</div></div>
-    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Totale</div><div style="font-size:1.6rem;font-weight:800;color:#FFC000">${fmtM(totalComm)}</div></div>
-    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Media</div><div style="font-size:1.6rem;font-weight:800;color:#70AD47">${_bmFixes.length?fmtM(totalComm/_bmFixes.length):'—'}</div></div>
+  const dispComm = _bmFilter ? filteredComm : totalComm;
+  const dispLen  = _bmFilter ? filtered.length : _bmFixes.length;
+  let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;">
+    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Fixture${_bmFilter?' trovate':' Totali'}</div><div style="font-size:1.6rem;font-weight:800;color:#fff">${_bmFilter?countLabel:_bmFixes.length}</div></div>
+    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Totale</div><div style="font-size:1.6rem;font-weight:800;color:#FFC000">${fmtM(dispComm)}</div></div>
+    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Media</div><div style="font-size:1.6rem;font-weight:800;color:#70AD47">${dispLen?fmtM(dispComm/dispLen):'—'}</div></div>
+  </div>
+  <div style="margin-bottom:14px;">
+    <input id="bm-search" type="search" value="${_bmFilter.replace(/"/g,'&quot;')}" oninput="filterBrokerTable(this.value)"
+      placeholder="🔍  Cerca nave, noleggiatore (CHRTR), armatore (OWS)…"
+      style="width:100%;padding:9px 14px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);font-size:0.87rem;outline:none;box-sizing:border-box;"
+      onfocus="this.style.borderColor='var(--gold)'" onblur="this.style.borderColor='var(--border)'"/>
   </div>
   <table class="data-table" style="min-width:700px"><thead><tr>`;
   cols.forEach(c => {
@@ -1015,7 +1092,10 @@ function _renderBrokerModal() {
     html += `<th class="sortable${c.cls?' '+c.cls:''} ${isActive?'sort-active':''}" onclick="sortBrokerTable('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
   });
   html += '</tr></thead><tbody>';
-  sorted.forEach(r => {
+  if (filtered.length === 0) {
+    html += `<tr><td colspan="7" style="text-align:center;padding:28px;color:var(--muted);font-size:0.9rem;">Nessun risultato per "<strong style="color:var(--gold)">${_bmFilter}</strong>"</td></tr>`;
+  }
+  filtered.forEach(r => {
     const side = r.side||'—';
     html += `<tr>
       <td style="white-space:nowrap;font-variant-numeric:tabular-nums">${r.date?r.date.toLocaleDateString('it-IT'):'—'}</td>
