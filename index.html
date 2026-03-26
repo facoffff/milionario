@@ -142,7 +142,7 @@
   <!-- PERFORMANCE VS MERCATO -->
   <div class="grid-1" style="margin-top:20px;">
     <div class="card">
-      <h3>Performance vs Mercato<strong>Commissione mensile rapportata al valore del mercato — mesi sopra la media in giallo</strong></h3>
+      <h3>Performance vs Mercato<strong>Commissione mensile ($) vs media del mercato — barre dorate = mesi sopra la media relativa</strong></h3>
       <div class="chart-wrap tall"><canvas id="chartPerfMkt"></canvas></div>
     </div>
   </div>
@@ -678,8 +678,8 @@ function render(d, marketMap) {
   charts.cMkt = new Chart(document.getElementById('chartPerfMkt'), {
     type:'bar',
     data:{ labels: monthLabels, datasets:[
-      { label:'Comm. / Mercato (indice)', data: perfRaw,
-        backgroundColor: perfRaw.map(v => v===null ? 'transparent' : v>=perfAvg ? '#FFC000' : 'rgba(46,117,182,0.7)'),
+      { label:'Commissione mensile ($)', data: commArr,
+        backgroundColor: perfRaw.map(v => v===null ? 'rgba(46,117,182,0.7)' : v>=perfAvg ? '#FFC000' : 'rgba(46,117,182,0.7)'),
         borderRadius:5, borderSkipped:false, order:2, yAxisID:'yPerf' },
       { label:'Media Mercato', data: mktArr, type:'line',
         borderColor:'#70AD47', backgroundColor:'rgba(112,173,71,0.12)',
@@ -691,14 +691,14 @@ function render(d, marketMap) {
         legend:{labels:{boxWidth:12}},
         tooltip:{ callbacks:{ label:ctx => {
           if(ctx.dataset.label==='Media Mercato') return ' Mercato: '+Number(ctx.parsed.y).toLocaleString('it-IT');
-          return ' Indice: $'+Number(ctx.parsed.y).toLocaleString('it-IT')+' / pt mercato';
+          return ' Comm: $'+Number(ctx.parsed.y).toLocaleString('it-IT');
         }}}
       },
       scales:{
         x:{ grid:{color:GC} },
         yPerf:{ position:'left', grid:{color:GC}, beginAtZero:true,
-          title:{display:true, text:'$ per punto mercato', color:'#8fa3bf', font:{size:10}},
-          ticks:{callback:v=>'$'+Math.round(v).toLocaleString('it-IT')} },
+          title:{display:true, text:'Commissione ($)', color:'#8fa3bf', font:{size:10}},
+          ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'} },
         yMkt:{ position:'right', grid:{display:false},
           title:{display:true, text:'Media Mercato', color:'#70AD47', font:{size:10}},
           ticks:{color:'#70AD47'} }
