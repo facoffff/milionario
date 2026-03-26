@@ -69,7 +69,8 @@
   .data-table td{padding:9px 14px;border-bottom:1px solid #1a2e4a;color:var(--text);}
   .data-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
   .data-table tr:hover td{background:rgba(46,117,182,0.08);}
-  .dy:inline-block;padding:2px 9px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;}
+  .data-table tr:last-child td{border-bottom:none;}
+  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;}
   .badge-blue{background:rgba(46,117,182,0.2);color:#7bb8e8;}
   .badge-green{background:rgba(112,173,71,0.2);color:#9dd665;}
   .badge-orange{background:rgba(237,125,49,0.2);color:#f0a76b;}
@@ -90,6 +91,7 @@
   body.light .data-table td{border-bottom-color:#e4edf5;}
   body.light .data-table tr:hover td{background:rgba(46,117,182,0.07);}
   body.light .kpi{box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+  body.light .kpi-value{color:var(--dark);}
   body.light .card{box-shadow:0 2px 8px rgba(0,0,0,0.06);}
 
   /* SIDEBAR */
@@ -206,11 +208,11 @@
   <p class="section-title">📈 Andamento Mensile</p>
   <div class="grid-2">
     <div class="card">
-      <h3>Fixture Mensili<strong>Numero di fixture chiuse per mese</strong></h3>
+      <h3>Fixture Mensili</h3>
       <div class="chart-wrap tall"><canvas id="chartMonthlyCount"></canvas></div>
     </div>
     <div class="card">
-      <h3>Commissione Mensile<strong>Commissione minima mensile con trend ($)</strong></h3>
+      <h3>Commissione Mensile</h3>
       <div class="chart-wrap tall"><canvas id="chartMonthlyComm"></canvas></div>
     </div>
   </div>
@@ -218,7 +220,7 @@
   <!-- PERFORMANCE VS MERCATO -->
   <div class="grid-1" style="margin-top:20px;">
     <div class="card">
-      <h3>Performance vs Mercato<strong>Commissione mensile ($) vs media del mercato — barre dorate = mesi sopra la media relativa</strong></h3>
+      <h3>Performance vs Mercato</h3>
       <div class="chart-wrap tall"><canvas id="chartPerfMkt"></canvas></div>
     </div>
   </div>
@@ -227,11 +229,11 @@
   <p class="section-title">🤝 Clienti Seguiti</p>
   <div class="grid-2">
     <div class="card">
-      <h3>Top CHRTR Seguiti<strong>I 10 charterer che seguiamo — fixture e commissione ($)</strong></h3>
+      <h3>Top CHRTR Seguiti</h3>
       <div class="chart-wrap tall"><canvas id="chartTopChrtrSeguiti"></canvas></div>
     </div>
     <div class="card">
-      <h3>Top OWS Seguiti<strong>I 10 armatori che seguiamo — fixture e commissione ($)</strong></h3>
+      <h3>Top OWS Seguiti</h3>
       <div class="chart-wrap tall"><canvas id="chartTopOwsSeguiti"></canvas></div>
     </div>
   </div>
@@ -240,15 +242,15 @@
   <p class="section-title">👥 Analisi Broker</p>
   <div class="grid-3">
     <div class="card">
-      <h3>Broker Singoli<strong>Fixture per broker (anche in coppia)</strong></h3>
+      <h3>Broker Singoli</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrIndiv"></canvas></div>
     </div>
     <div class="card">
-      <h3>🔥 Coppie Broker più Quotate<strong>Combinazioni di broker nelle stesse fixture</strong></h3>
+      <h3>🔥 Coppie Broker più Quotate</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrPairs"></canvas></div>
     </div>
     <div class="card">
-      <h3>Distribuzione Uffici<strong>Fixture per ufficio di fatturazione</strong></h3>
+      <h3>Distribuzione Uffici</h3>
       <div class="chart-wrap tall"><canvas id="chartOffice"></canvas></div>
     </div>
   </div>
@@ -257,11 +259,11 @@
   <p class="section-title">🏆 Performance Broker (da GENOA FIXTURES)</p>
   <div class="grid-2">
     <div class="card">
-      <h3>Fixture per Broker<strong>YTD Gen–Mar 2026 vs Gen–Mar 2025</strong></h3>
+      <h3>Fixture per Broker</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrFixYTD"></canvas></div>
     </div>
     <div class="card">
-      <h3>Fixture per Broker per Anno<strong>2024 (parz.) · 2025 (completo) · 2026 (YTD)</strong></h3>
+      <h3>Fixture per Broker per Anno</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrFixYear"></canvas></div>
     </div>
   </div>
@@ -270,17 +272,17 @@
   <p class="section-title">🔬 Analisi Individuale Broker</p>
   <div class="grid-2">
     <div class="card">
-      <h3>Commissione Media per Fixture<strong>Valore medio di ogni deal per broker ($)</strong></h3>
+      <h3>Commissione Media per Fixture</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrAvgComm"></canvas></div>
     </div>
     <div class="card">
-      <h3>Trend Mensile Fixture<strong>Numero di fixture per broker nel tempo</strong></h3>
+      <h3>Trend Mensile Fixture</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrTrend"></canvas></div>
     </div>
   </div>
   <div class="grid-1">
     <div class="card">
-      <h3>Quota di Mercato Mensile<strong>% fixture per broker ogni mese</strong></h3>
+      <h3>Quota di Mercato Mensile</h3>
       <div class="chart-wrap tall"><canvas id="chartBrkrShare"></canvas></div>
     </div>
   </div>
