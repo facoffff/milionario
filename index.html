@@ -69,8 +69,7 @@
   .data-table td{padding:9px 14px;border-bottom:1px solid #1a2e4a;color:var(--text);}
   .data-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
   .data-table tr:hover td{background:rgba(46,117,182,0.08);}
-  .data-table tr:last-child td{border-bottom:none;}
-  .badge{display:inline-block;padding:2px 9px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;}
+  .dy:inline-block;padding:2px 9px;border-radius:20px;font-size:0.72rem;font-weight:700;letter-spacing:0.5px;}
   .badge-blue{background:rgba(46,117,182,0.2);color:#7bb8e8;}
   .badge-green{background:rgba(112,173,71,0.2);color:#9dd665;}
   .badge-orange{background:rgba(237,125,49,0.2);color:#f0a76b;}
@@ -127,6 +126,12 @@
   .bm-close{background:none;border:none;color:var(--muted);font-size:1.4rem;cursor:pointer;padding:4px 10px;border-radius:8px;transition:all 0.15s;}
   .bm-close:hover{color:#fff;background:rgba(255,255,255,0.1);}
   .bm-body{padding:20px 24px;overflow-x:auto;}
+  /* SORTABLE TH */
+  .data-table th.sortable{cursor:pointer;user-select:none;transition:color 0.15s;white-space:nowrap;}
+  .data-table th.sortable:hover{color:var(--gold);}
+  .data-table th.sortable .sort-arrow{display:inline-block;margin-left:5px;font-size:0.65rem;opacity:0.35;transition:opacity 0.15s,color 0.15s;}
+  .data-table th.sortable.sort-active .sort-arrow{opacity:1;color:var(--gold);}
+  .data-table th.sortable:hover .sort-arrow{opacity:0.7;}
 </style>
 </head>
 <body>
@@ -262,7 +267,7 @@
   </div>
 
   <!-- ANALISI INDIVIDUALE BROKER -->
-  <p class="section-title">🔎 Analisi Individuale Broker</p>
+  <p class="section-title">🔬 Analisi Individuale Broker</p>
   <div class="grid-2">
     <div class="card">
       <h3>Commissione Media per Fixture<strong>Valore medio di ogni deal per broker ($)</strong></h3>
@@ -316,10 +321,10 @@
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── CONFIG ────────────────────────────────────────────────────────────────────
 const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
 
-// ── CHART GLOBAL DEFAULTS ──────────────────────────────────────────────────────────────────────────────────────────────
+// ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────
 Chart.defaults.color = '#8fa3bf';
 Chart.defaults.font.family = "'Segoe UI', Arial, sans-serif";
 Chart.defaults.font.size = 11;
@@ -327,7 +332,7 @@ let GC = 'rgba(36,53,84,0.8)';
 const PAL = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
 const BRKR_CORE = ['MPE','LCE','FGA','OPE','SDP','BEE'];
 
-// ── HELPERS ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── HELPERS ───────────────────────────────────────────────────────────────────
 const fmtM = v => v >= 1e6 ? '$'+Math.round(v/1e6*10)/10+'M' : v >= 1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+Math.round(v);
 const fmtN = v => '$' + Math.round(v).toLocaleString('it-IT');
 const fmtPct = v => (v*100).toFixed(1)+'%';
@@ -366,7 +371,7 @@ function getBrokers(s) {
 
 function normPair(a, b) { return [a,b].sort().join(' + '); }
 
-// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ──────────────────────────────
+// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ───────────────────
 function fetchSheetJsonp(sheetId, sheetName, opts) {
   opts = opts || {};
   return new Promise((resolve, reject) => {
@@ -499,7 +504,7 @@ function parseGF(rows) {
     .filter(r => r.date !== null && r.minComm > 0);
 }
 
-// ── COMPUTE ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── COMPUTE ───────────────────────────────────────────────────────────────────
 function compute(gfData) {
   // ─ Monthly aggregations
   const monthSet = new Set();
@@ -646,7 +651,7 @@ function compute(gfData) {
   };
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────
 let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
@@ -926,7 +931,7 @@ function render(d, marketMap) {
   });
 }
 
-// ── SIDEBAR ────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── SIDEBAR ───────────────────────────────────────────────────────────────────
 const BRKR_COLORS = {MPE:'#2E75B6',LCE:'#FFC000',FGA:'#ED7D31',OPE:'#70AD47',SDP:'#9B59B6',BEE:'#E74C3C'};
 
 function toggleSidebar() {
@@ -950,21 +955,65 @@ function initSidebar(data, gfData) {
   });
 }
 
+// ── BROKER MODAL SORT STATE ───────────────────────────────────────────────────
+let _bmBroker = null, _bmFixes = [], _bmSortKey = 'date', _bmSortDir = -1;
+
 function openBrokerModal(broker, gfData) {
   const src = gfData || window._gfData || [];
-  const fixes = src.filter(r => getBrokers(r.brkr).includes(broker)).sort((a,b) => b.date - a.date);
-  const totalComm = fixes.reduce((s,r)=>s+r.minComm,0);
+  _bmBroker = broker;
+  _bmFixes = src.filter(r => getBrokers(r.brkr).includes(broker));
+  _bmSortKey = 'date';
+  _bmSortDir = -1;
+  _renderBrokerModal();
+  document.getElementById('broker-modal').classList.add('open');
+}
+
+function sortBrokerTable(key) {
+  if (_bmSortKey === key) { _bmSortDir *= -1; }
+  else { _bmSortKey = key; _bmSortDir = -1; }
+  _renderBrokerModal();
+}
+
+function _renderBrokerModal() {
+  const broker = _bmBroker;
+  const sorted = [..._bmFixes].sort((a, b) => {
+    let va, vb;
+    if (_bmSortKey === 'date')   { va = a.date ? a.date.getTime() : 0; vb = b.date ? b.date.getTime() : 0; }
+    else if (_bmSortKey === 'vsl')    { va = (a.vsl||'').toLowerCase();  vb = (b.vsl||'').toLowerCase(); }
+    else if (_bmSortKey === 'chrtr')  { va = (a.chrtr||'').toLowerCase(); vb = (b.chrtr||'').toLowerCase(); }
+    else if (_bmSortKey === 'ows')    { va = (a.ows||'').toLowerCase();   vb = (b.ows||'').toLowerCase(); }
+    else if (_bmSortKey === 'side')   { va = (a.side||'').toLowerCase();  vb = (b.side||'').toLowerCase(); }
+    else if (_bmSortKey === 'office') { va = (a.office||'').toLowerCase();vb = (b.office||'').toLowerCase(); }
+    else if (_bmSortKey === 'comm')   { va = a.minComm||0; vb = b.minComm||0; }
+    else { va = 0; vb = 0; }
+    if (typeof va === 'string') return _bmSortDir * va.localeCompare(vb);
+    return _bmSortDir * (va - vb);
+  });
+  const totalComm = _bmFixes.reduce((s,r)=>s+r.minComm,0);
   document.getElementById('bm-title').innerHTML =
-    `<span style="color:${BRKR_COLORS[broker]||'#2E75B6'}">${broker}</span>&nbsp; <span style="font-weight:400;color:var(--muted);font-size:0.9rem;">${fixes.length} contratti · ${fmtM(totalComm)} totale</span>`;
+    `<span style="color:${BRKR_COLORS[broker]||'#2E75B6'}">${broker}</span>&nbsp; <span style="font-weight:400;color:var(--muted);font-size:0.9rem;">${_bmFixes.length} contratti · ${fmtM(totalComm)} totale</span>`;
+  const cols = [
+    {key:'date',   label:'Data',      cls:''},
+    {key:'vsl',    label:'Vessel',    cls:''},
+    {key:'chrtr',  label:'CHRTR',     cls:''},
+    {key:'ows',    label:'OWS',       cls:''},
+    {key:'side',   label:'Side',      cls:''},
+    {key:'office', label:'Office',    cls:''},
+    {key:'comm',   label:'Comm. Min.',cls:'num'},
+  ];
   let html = `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:22px;">
-    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Fixture Totali</div><div style="font-size:1.6rem;font-weight:800;color:#fff">${fixes.length}</div></div>
+    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Fixture Totali</div><div style="font-size:1.6rem;font-weight:800;color:#fff">${_bmFixes.length}</div></div>
     <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Totale</div><div style="font-size:1.6rem;font-weight:800;color:#FFC000">${fmtM(totalComm)}</div></div>
-    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Media</div><div style="font-size:1.6rem;font-weight:800;color:#70AD47">${fixes.length?fmtM(totalComm/fixes.length):'—'}</div></div>
+    <div style="background:var(--bg);padding:14px;border-radius:10px;text-align:center;"><div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">Comm. Media</div><div style="font-size:1.6rem;font-weight:800;color:#70AD47">${_bmFixes.length?fmtM(totalComm/_bmFixes.length):'—'}</div></div>
   </div>
-  <table class="data-table" style="min-width:700px"><thead><tr>
-    <th>Data</th><th>Vessel</th><th>CHRTR</th><th>OWS</th><th>Side</th><th>Office</th><th class="num">Comm. Min.</th>
-  </tr></thead><tbody>`;
-  fixes.forEach(r => {
+  <table class="data-table" style="min-width:700px"><thead><tr>`;
+  cols.forEach(c => {
+    const isActive = _bmSortKey === c.key;
+    const arrow = isActive ? (_bmSortDir === -1 ? '▼' : '▲') : '⇅';
+    html += `<th class="sortable${c.cls?' '+c.cls:''} ${isActive?'sort-active':''}" onclick="sortBrokerTable('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
+  });
+  html += '</tr></thead><tbody>';
+  sorted.forEach(r => {
     const side = r.side||'—';
     html += `<tr>
       <td style="white-space:nowrap;font-variant-numeric:tabular-nums">${r.date?r.date.toLocaleDateString('it-IT'):'—'}</td>
@@ -972,19 +1021,18 @@ function openBrokerModal(broker, gfData) {
       <td>${r.chrtr||'—'}</td><td>${r.ows||'—'}</td>
       <td><span class="badge ${side==='C'?'badge-blue':side==='O'?'badge-green':'badge-gold'}">${side}</span></td>
       <td style="font-size:0.78rem;color:var(--muted)">${r.office||'—'}</td>
-      <td class="num">${r.minComm?fmtN(r.minComm):' —'}</td>
+      <td class="num">${r.minComm?fmtN(r.minComm):'—'}</td>
     </tr>`;
   });
   html += '</tbody></table>';
   document.getElementById('bm-body').innerHTML = html;
-  document.getElementById('broker-modal').classList.add('open');
 }
 
 function closeBrokerModal() {
   document.getElementById('broker-modal').classList.remove('open');
 }
 
-// ── HIDE / RESTORE CARDS ───────────────────────────────────────────────────────────────────────────────────────────────
+// ── HIDE / RESTORE CARDS ──────────────────────────────────────────────────────
 const _hiddenCards = {};
 
 function initCardHideButtons() {
@@ -1037,7 +1085,7 @@ function updateHiddenPanel() {
   ).join('');
 }
 
-// ── THEME TOGGLE ──────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── THEME TOGGLE ──────────────────────────────────────────────────────────────
 function toggleTheme() {
   const isLight = document.body.classList.toggle('light');
   const btn = document.getElementById('theme-btn');
@@ -1058,7 +1106,7 @@ function toggleTheme() {
   } catch(e){}
 })();
 
-// ── MAIN ───────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+// ── MAIN ──────────────────────────────────────────────────────────────────────
 async function init() {
   // Rilevazione apertura da file locale
   if (location.protocol === 'file:') {
@@ -1071,7 +1119,7 @@ async function init() {
     eb.innerHTML += `<div style="margin-top:16px;padding:16px;background:#0a2a0a;border:1px solid #70AD47;border-radius:8px;text-align:center;">
       <p style="color:#70AD47;font-weight:700;font-size:1.1rem;margin-bottom:8px;">✅ Apri il link web invece:</p>
       <a href="https://facoffff.github.io/milionario/" target="_blank"
-         style=""color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
+         style="color:#FFC000;font-size:1.2rem;font-weight:800;word-break:break-all;text-decoration:underline;">
         https://facoffff.github.io/milionario/
       </a>
       <p style="color:#8fa3bf;font-size:0.85rem;margin-top:8px;">Copia questo link e aprilo nel browser — i dati si caricano automaticamente.</p>
