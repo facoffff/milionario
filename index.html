@@ -269,7 +269,7 @@
   </div>
 
   <!-- ANALISI INDIVIDUALE BROKER -->
-  <p class="section-title">🔬 Analisi Individuale Broker</p>
+  <p class="section-title">🔍 Analisi Individuale Broker</p>
   <div class="grid-2">
     <div class="card">
       <h3>Commissione Media per Fixture</h3>
@@ -277,8 +277,7 @@
     </div>
     <div class="card">
       <h3>Trend Mensile Fixture</h3>
-      <div class="chart-wrap tall"><canvas id="chartBrkrTrend"></canvas></div>
-    </div>
+      <div class="chart-wrap tall"><canvas id="chartBrkrTrend"></canvas></div>n    </div>
   </div>
   <div class="grid-1">
     <div class="card">
@@ -323,8 +322,7 @@
 <footer>Chi Vuole Essere Milionario? — Genoa Fixtures Analytics · Dati aggiornati in tempo reale da Google Sheets</footer>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
+// ── CONFIG ────────────────────────────────────────────────────────────────────const SHEET_ID = '1D1qVTBN3shujwOkV0eRHrfdwX7mya54ociV0jTHn37w';
 
 // ── CHART GLOBAL DEFAULTS ─────────────────────────────────────────────────────
 Chart.defaults.color = '#8fa3bf';
@@ -334,7 +332,7 @@ let GC = 'rgba(36,53,84,0.8)';
 const PAL = ['#2E75B6','#70AD47','#ED7D31','#FFC000','#9B59B6','#E74C3C','#1ABC9C','#3498DB','#E67E22','#27AE60'];
 const BRKR_CORE = ['MPE','LCE','FGA','OPE','SDP','BEE'];
 
-// ── HELPERS ───────────────────────────────────────────────────────────────────
+// ── HELPERS ────────────────────────────────────────────────────────────────────
 const fmtM = v => v >= 1e6 ? '$'+Math.round(v/1e6*10)/10+'M' : v >= 1e3 ? '$'+Math.round(v/1e3)+'K' : '$'+Math.round(v);
 const fmtN = v => '$' + Math.round(v).toLocaleString('it-IT');
 const fmtPct = v => (v*100).toFixed(1)+'%';
@@ -373,7 +371,7 @@ function getBrokers(s) {
 
 function normPair(a, b) { return [a,b].sort().join(' + '); }
 
-// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ───────────────────
+// ── JSONP FETCH (funziona da file locale E da GitHub Pages) ────────────────────
 function fetchSheetJsonp(sheetId, sheetName, opts) {
   opts = opts || {};
   return new Promise((resolve, reject) => {
@@ -506,7 +504,7 @@ function parseGF(rows) {
     .filter(r => r.date !== null && r.minComm > 0);
 }
 
-// ── COMPUTE ───────────────────────────────────────────────────────────────────
+// ── COMPUTE ────────────────────────────────────────────────────────────────────
 function compute(gfData) {
   // ─ Monthly aggregations
   const monthSet = new Set();
@@ -653,7 +651,7 @@ function compute(gfData) {
   };
 }
 
-// ── RENDER ────────────────────────────────────────────────────────────────────
+// ── RENDER ────────────────────────────────────────────────────────────────────────
 let charts = {};
 
 function destroyCharts() { Object.values(charts).forEach(c => c.destroy()); charts = {}; }
@@ -749,38 +747,49 @@ function render(d, marketMap) {
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
   });
 
-  // cMkt — Performance vs Mercato
-  const mktArr  = d.months.map(m => (marketMap && marketMap[m]) ? marketMap[m] : null);
-  const perfRaw = d.months.map((m,i) => mktArr[i] ? Math.round(commArr[i] / mktArr[i]) : null);
-  const perfValid = perfRaw.filter(v => v !== null);
-  const perfAvg  = perfValid.length ? perfValid.reduce((a,b)=>a+b,0)/perfValid.length : 0;
+  // cMkt — Performance vs Mercato (delta % sopra/sotto mercato per fixture)
+  const mktArr     = d.months.map(m => (marketMap && marketMap[m]) ? marketMap[m] : null);
+  const avgCpf     = d.months.map(m => { const n=d.monthCount[m]||0; return n>0 ? Math.round((d.monthComm[m]||0)/n) : null; });
+  const deltaPct   = d.months.map((m,i) => { const o=avgCpf[i], mk=mktArr[i]; return (o!==null&&mk) ? Math.round((o-mk)/mk*100) : null; });
+  const nAbove     = deltaPct.filter(v=>v!==null&&v>=0).length;
+  const nBelow     = deltaPct.filter(v=>v!==null&&v<0).length;
+  const barColors  = deltaPct.map(v => v===null?'transparent':v>=0?'rgba(112,173,71,0.82)':'rgba(231,76,60,0.75)');
+  const barBorders = deltaPct.map(v => v===null?'transparent':v>=0?'#70AD47':'#E74C3C');
+  // Update card title to show summary
+  (()=>{ const h=document.querySelector('#chartPerfMkt')?.closest('.card')?.querySelector('h3'); if(h){ const sp=h.querySelector('span.pvm-sub'); const node=sp||document.createElement('span'); node.className='pvm-sub'; node.style.cssText='font-size:0.72rem;font-weight:400;color:var(--muted);margin-left:10px;'; node.textContent=`${nAbove} mesi sopra · ${nBelow} sotto`; if(!sp) h.appendChild(node); }})();
   charts.cMkt = new Chart(document.getElementById('chartPerfMkt'), {
     type:'bar',
     data:{ labels: monthLabels, datasets:[
-      { label:'Commissione mensile ($)', data: commArr,
-        backgroundColor: perfRaw.map(v => v===null ? 'rgba(46,117,182,0.7)' : v>=perfAvg ? '#FFC000' : 'rgba(46,117,182,0.7)'),
-        borderRadius:5, borderSkipped:false, order:2, yAxisID:'yPerf' },
-      { label:'Media Mercato', data: mktArr, type:'line',
-        borderColor:'#70AD47', backgroundColor:'rgba(112,173,71,0.12)',
-        borderWidth:2, pointRadius:3, pointBackgroundColor:'#70AD47', tension:0.4, fill:false,
-        order:1, yAxisID:'yMkt' }
+      { label:'Delta vs Mercato', data: deltaPct,
+        backgroundColor: barColors, borderColor: barBorders,
+        borderWidth:1, borderRadius:4, borderSkipped:false },
+      { label:'_zero', data: d.months.map(()=>0), type:'line',
+        borderColor:'rgba(143,163,191,0.45)', borderWidth:1.5,
+        borderDash:[5,4], pointRadius:0, fill:false, order:0 }
     ]},
     options:{ responsive:true, maintainAspectRatio:false,
       plugins:{
-        legend:{labels:{boxWidth:12}},
-        tooltip:{ callbacks:{ label:ctx => {
-          if(ctx.dataset.label==='Media Mercato') return ' Mercato: '+Number(ctx.parsed.y).toLocaleString('it-IT');
-          return ' Comm: $'+Number(ctx.parsed.y).toLocaleString('it-IT');
-        }}}
+        legend:{ labels:{ filter: item => item.label!=='_zero', boxWidth:12 }},
+        tooltip:{ callbacks:{
+          title: ctx => monthLabels[ctx[0].dataIndex],
+          label: ctx => {
+            if(ctx.dataset.label==='_zero') return null;
+            const i=ctx.dataIndex, pct=deltaPct[i], our=avgCpf[i], mk=mktArr[i];
+            if(pct===null) return ' Nessun dato mercato';
+            const sign=pct>=0?'+':'';
+            return [`  Delta: ${sign}${pct}%`, `  Nostro: $${(our||0).toLocaleString('it-IT')}/fix`, `  Mercato: $${(mk||0).toLocaleString('it-IT')}/fix`];
+          },
+          afterLabel: ctx => { if(ctx.dataset.label==='_zero') return null; const i=ctx.dataIndex,n=d.monthCount[ctx.dataIndex]||0; return [`  Fixture: ${n}`]; }
+        }}
       },
       scales:{
         x:{ grid:{color:GC} },
-        yPerf:{ position:'left', grid:{color:GC}, beginAtZero:true,
-          title:{display:true, text:'Commissione ($)', color:'#8fa3bf', font:{size:10}},
-          ticks:{callback:v=>'$'+Math.round(v/1e3)+'K'} },
-        yMkt:{ position:'right', grid:{display:false},
-          title:{display:true, text:'Media Mercato', color:'#70AD47', font:{size:10}},
-          ticks:{color:'#70AD47'} }
+        y:{
+          grid:{ color: ctx => ctx.tick.value===0 ? 'rgba(143,163,191,0.6)' : GC,
+                 lineWidth: ctx => ctx.tick.value===0 ? 1.5 : 1 },
+          ticks:{ callback: v => (v>0?'+':'')+v+'%' },
+          title:{ display:true, text:'% sopra/sotto media mercato (comm/fixture)', color:'#8fa3bf', font:{size:10} }
+        }
       }
     }
   });
@@ -933,7 +942,7 @@ function render(d, marketMap) {
   });
 }
 
-// ── SIDEBAR ───────────────────────────────────────────────────────────────────
+// ── SIDEBAR ────────────────────────────────────────────────────────────────────
 const BRKR_COLORS = {MPE:'#2E75B6',LCE:'#FFC000',FGA:'#ED7D31',OPE:'#70AD47',SDP:'#9B59B6',BEE:'#E74C3C'};
 
 function toggleSidebar() {
@@ -957,7 +966,7 @@ function initSidebar(data, gfData) {
   });
 }
 
-// ── BROKER MODAL SORT STATE ───────────────────────────────────────────────────
+// ── BROKER MODAL SORT STATE ────────────────────────────────────────────────────
 let _bmBroker = null, _bmFixes = [], _bmSortKey = 'date', _bmSortDir = -1, _bmFilter = '';
 
 function openBrokerModal(broker, gfData) {
@@ -1112,7 +1121,7 @@ function updateHiddenPanel() {
     return;
   }
   panel.innerHTML = keys.map(id =>
-    `<div class="sb-chart-row"><span style="flex:1;font-size:0.77rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_hiddenCards[id]}</span><button class="sb-restore-btn" onclick="restoreCard('${id}')">↩ mostra</button></div>`
+    `<div class="sb-chart-row"><span style="flex:1;font-size:0.77rem;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${_hiddenCards[id]}</span><button class="sb-restore-btn" onclick="restoreCard('${id}');">↩ mostra</button></div>`
   ).join('');
 }
 
