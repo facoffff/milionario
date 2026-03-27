@@ -110,7 +110,7 @@
   .sb-restore-btn:hover{background:rgba(255,192,0,0.15);}
 
   /* HIDE CARD BUTTON */
-  .card-hide-btn{background:none;border:none;color:transparent;cursor:pointer;font-size:0.85rem;padding:2px 6px;border-radius:4px;line-height:1;transition:all 0.15s;margin-left:auto;leex-shrink:0;}
+  .card-hide-btn{background:none;border:none;color:transparent;cursor:pointer;font-size:0.85rem;padding:2px 6px;border-radius:4px;line-height:1;transition:all 0.15s;margin-left:auto;flex-shrink:0;}
   .card:hover .card-hide-btn{color:var(--muted);}
   .card-hide-btn:hover{color:#E74C3C !important;}
 
@@ -214,14 +214,6 @@
     <div class="card">
       <h3>Commissione Mensile</h3>
       <div class="chart-wrap tall"><canvas id="chartMonthlyComm"></canvas></div>
-    </div>
-  </div>
-
-  <!-- PERFORMANCE VS MERCATO -->
-  <div class="grid-1" style="margin-top:20px;">
-    <div class="card">
-      <h3>Performance vs Mercato</h3>
-      <div class="chart-wrap tall"><canvas id="chartPerfMkt"></canvas></div>
     </div>
   </div>
 
@@ -749,53 +741,6 @@ function render(d, marketMap) {
       scales:{ x:{grid:{color:GC}}, y:{grid:{color:GC},ticks:{callback:v=>v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+v}} } }
   });
 
-  // cMkt — Performance vs Mercato (delta % sopra/sotto mercato per fixture)
-  const mktArr     = d.months.map(m => (marketMap && marketMap[m]) ? marketMap[m] : null);
-  const avgCpf     = d.months.map(m => { const n=d.monthCount[m]||0; return n>0 ? Math.round((d.monthComm[m]||0)/n) : null; });
-  const deltaPct   = d.months.map((m,i) => { const o=avgCpf[i], mk=mktArr[i]; return (o!==null&&mk) ? Math.round((o-mk)/mk*100) : null; });
-  const nAbove     = deltaPct.filter(v=>v!==null&&v>=0).length;
-  const nBelow     = deltaPct.filter(v=>v!==null&&v<0).length;
-  const barColors  = deltaPct.map(v => v===null?'transparent':v>=0?'rgba(112,173,71,0.82)':'rgba(231,76,60,0.75)');
-  const barBorders = deltaPct.map(v => v===null?'transparent':v>=0?'#70AD47':'#E74C3C');
-  // Update card title to show summary
-  (()=>{ const h=document.querySelector('#chartPerfMkt')?.closest('.card')?.querySelector('h3'); if(h){ const sp=h.querySelector('span.pvm-sub'); const node=sp||document.createElement('span'); node.className='pvm-sub'; node.style.cssText='font-size:0.72rem;font-weight:400;color:var(--muted);margin-left:10px;'; node.textContent=`${nAbove} mesi sopra · ${nBelow} sotto`; if(!sp) h.appendChild(node); }})();
-  charts.cMkt = new Chart(document.getElementById('chartPerfMkt'), {
-    type:'bar',
-    data:{ labels: monthLabels, datasets:[
-      { label:'Delta vs Mercato', data: deltaPct,
-        backgroundColor: barColors, borderColor: barBorders,
-        borderWidth:1, borderRadius:4, borderSkipped:false },
-      { label:'_zero', data: d.months.map(()=>0), type:'line',
-        borderColor:'rgba(143,163,191,0.45)', borderWidth:1.5,
-        borderDash:[5,4], pointRadius:0, fill:false, order:0 }
-    ]},
-    options:{ responsive:true, maintainAspectRatio:false,
-      plugins:{
-        legend:{ labels:{ filter: item => item.label!=='_zero', boxWidth:12 }},
-        tooltip:{ callbacks:{
-          title: ctx => monthLabels[ctx[0].dataIndex],
-          label: ctx => {
-            if(ctx.dataset.label==='_zero') return null;
-            const i=ctx.dataIndex, pct=deltaPct[i], our=avgCpf[i], mk=mktArr[i];
-            if(pct===null) return ' Nessun dato mercato';
-            const sign=pct>=0?'+':'';
-            return [`  Delta: ${sign}${pct}%`, `  Nostro: $${(our||0).toLocaleString('it-IT')}/fix`, `  Mercato: $${(mk||0).toLocaleString('it-IT')}/fix`];
-          },
-          afterLabel: ctx => { if(ctx.dataset.label==='_zero') return null; const i=ctx.dataIndex,n=d.monthCount[ctx.dataIndex]||0; return [`  Fixture: ${n}`]; }
-        }}
-      },
-      scales:{
-        x:{ grid:{color:GC} },
-        y:{
-          grid:{ color: ctx => ctx.tick.value===0 ? 'rgba(143,163,191,0.6)' : GC,
-                 lineWidth: ctx => ctx.tick.value===0 ? 1.5 : 1 },
-          ticks:{ callback: v => (v>0?'+':'')+v+'%' },
-          title:{ display:true, text:'% sopra/sotto media mercato (comm/fixture)', color:'#8fa3bf', font:{size:10} }
-        }
-      }
-    }
-  });
-
   // 5 Broker individual donut
   const brkrSorted = BRKR_CORE.filter(b=>d.brkrCount[b]);
   charts.c5 = new Chart(document.getElementById('chartBrkrIndiv'), {
@@ -1074,7 +1019,7 @@ function closeBrokerModal() {
   document.getElementById('broker-modal').classList.remove('open');
 }
 
-// ── HIDE / RESTORE CARDS ──────────────────────────────────────────────────────
+// ── HIDE / RESTORE CARDS ─────────────────────────────────────────────────────
 const _hiddenCards = {};
 
 function initCardHideButtons() {
