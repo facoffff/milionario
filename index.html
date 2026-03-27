@@ -614,57 +614,6 @@ function compute(gfData) {
   });
 
   // ─ Trend mensile fixture per broker
-  const brkrMonthlyFix =  r.date.getMonth();
-    if (mo > curMonth) return;
-    getBrokers(r.brkr).forEach(b => {
-      if (!BRKR_CORE.includes(b)) return;
-      if (y === curYear)  brkrFixYTD_cur[b]++;
-      if (y === prevYear) brkrFixYTD_prev[b]++;
-    });
-  });
-
-  // ─ Broker by year
-  const allYears = [...new Set(gfData.map(r=>r.date.getFullYear()))].sort();
-  const brkrByYear = {};
-  allYears.forEach(y => {
-    brkrByYear[y] = {};
-    BRKR_CORE.forEach(b => brkrByYear[y][b] = 0);
-  });
-  gfData.forEach(r => {
-    const y = r.date.getFullYear();
-    getBrokers(r.brkr).forEach(b => { if(BRKR_CORE.includes(b)) brkrByYear[y][b]++; });
-  });
-
-  // ─ Clienti seguiti (colonna S)
-  const followC = gfData.filter(r => r.side === 'C' || r.side === 'O+C');
-  const followO = gfData.filter(r => r.side === 'O' || r.side === 'O+C');
-  const followedChrtr = new Set(followC.map(r => r.chrtr).filter(Boolean));
-  const followedOws   = new Set(followO.map(r => r.ows).filter(Boolean));
-
-  // Top CHRTR seguiti: commissione e fixture count
-  const chrtrSeg = {}, chrtrSegFix = {};
-  followC.forEach(r => {
-    chrtrSeg[r.chrtr]    = (chrtrSeg[r.chrtr]||0) + r.minComm;
-    chrtrSegFix[r.chrtr] = (chrtrSegFix[r.chrtr]||0) + 1;
-  });
-  const topChrtrSeg = Object.entries(chrtrSeg).filter(e=>e[0]).sort((a,b)=>b[1]-a[1]).slice(0,10);
-
-  // Top OWS seguiti: fixture count e commissione
-  const owsSeg = {}, owsSegComm = {};
-  followO.forEach(r => {
-    owsSeg[r.ows]     = (owsSeg[r.ows]||0) + 1;
-    owsSegComm[r.ows] = (owsSegComm[r.ows]||0) + r.minComm;
-  });
-  const topOwsSeg = Object.entries(owsSeg).filter(e=>e[0]).sort((a,b)=>(owsSegComm[b[0]]||0)-(owsSegComm[a[0]]||0)).slice(0,10);
-
-  // ─ Commissione media per fixture per broker
-  const brkrAvgComm = {};
-  BRKR_CORE.forEach(b => {
-    const fixes = gfData.filter(r => getBrokers(r.brkr).includes(b));
-    brkrAvgComm[b] = fixes.length > 0 ? fixes.reduce((s,r)=>s+r.minComm,0) / fixes.length : 0;
-  });
-
-  // ─ Trend mensile fixture per broker
   const brkrMonthlyFix = {};
   BRKR_CORE.forEach(b => { brkrMonthlyFix[b] = months.map(()=>0); });
   gfData.forEach(r => {
